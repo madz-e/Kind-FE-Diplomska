@@ -60,7 +60,7 @@ const MoodInsightCard = () => {
       {/* ── Header ── */}
       <View style={styles.headerRow}>
         <Text style={styles.starEmoji}>✨</Text>
-        <Text style={styles.headline}>Your mood insight</Text>
+        <Text style={styles.headline}>Your weekly mood insight</Text>
       </View>
 
       {/* ── Summary line (rule-based) ── */}
@@ -72,6 +72,19 @@ const MoodInsightCard = () => {
 
       {/* ── LLM feeling summary ── */}
       <Text style={styles.feelingText}>{data.feelingSummary}</Text>
+
+      {/* ── Observed pattern ── */}
+      {!!data.patternNote && (
+        <View style={styles.patternRow}>
+          <MaterialCommunityIcons
+            name="chart-timeline-variant"
+            size={14}
+            color="rgba(255,255,255,0.85)"
+            style={{ marginTop: 1 }}
+          />
+          <Text style={styles.patternText}>{data.patternNote}</Text>
+        </View>
+      )}
 
       {/* ── Divider ── */}
       <View style={styles.divider} />
@@ -157,6 +170,23 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(139,92,246,0.65)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 2,
+  },
+  patternRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 7,
+    marginTop: 11,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 13,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  patternText: {
+    flex: 1,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.92)',
+    lineHeight: 17,
+    fontStyle: 'italic',
   },
   divider: {
     height: 1,
