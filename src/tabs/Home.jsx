@@ -258,7 +258,7 @@ const Home = () => {
         </SoftCard>
 
         {/* Week in Review */}
-        <SoftCard seed={11} sparkleCount={3}>
+        <SoftCard seed={11} sparkleCount={3} style={{marginBottom: theme.spacing.lg }}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Week in Review</Text>
             <Text style={styles.cardSubtitle}>This week</Text>

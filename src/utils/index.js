@@ -49,11 +49,6 @@ export const moodColor = (level) => MOOD_LEVELS.find(m => m.level === level)?.co
 export const moodLabel = (level) => MOOD_LEVELS.find(m => m.level === level)?.label || 'Unknown';
 export const moodEmoji = (level) => MOOD_LEVELS.find(m => m.level === level)?.emoji || '😐';
 
-export const FEELINGS = [
-  'Happy', 'Calm', 'Content', 'Grateful', 'Excited', 'Hopeful',
-  'Anxious', 'Sad', 'Frustrated', 'Tired', 'Angry', 'Lonely',
-];
-
 export const FACTORS = [
   'Work', 'Sleep', 'Exercise', 'Relationships', 'Health', 'Weather', 'Food', 'Hobbies','School',
 ];
