@@ -24,8 +24,26 @@ export const MOOD_LEVELS = [
   { level: 2, label: 'Unpleasant',      emoji: '😕', hsl: 'hsl(210, 75%, 68%)', color: '#5ba8e8' },
   { level: 3, label: 'Neutral',         emoji: '😐', hsl: 'hsl(145, 55%, 62%)', color: '#5bc47e' },
   { level: 4, label: 'Pleasant',        emoji: '🙂', hsl: 'hsl(45, 90%, 65%)',  color: '#f5c842' },
-  { level: 5, label: 'Very Pleasant',   emoji: '😄', hsl: 'hsl(22, 90%, 65%)',  color: '#f5873a' },
+  { level: 5, label: 'Very Pleasant',   emoji: '😄', hsl: 'hsl(22, 90%, 65%)',  color: '#ffa065' },
 ];
+
+export const mixWhite = (hex, amt) => {
+  const h = (hex || '#9C7BEA').replace('#', '');
+  const n =
+    h.length === 3
+      ? h
+        .split('')
+        .map((c) => c + c)
+        .join('')
+      : h;
+  const r = parseInt(n.slice(0, 2), 16);
+  const g = parseInt(n.slice(2, 4), 16);
+  const b = parseInt(n.slice(4, 6), 16);
+  const mix = (c) => Math.round(c + (255 - c) * amt);
+  const to = (c) => c.toString(16).padStart(2, '0');
+  return `#${to(mix(r))}${to(mix(g))}${to(mix(b))}`;
+};
+export const moodPastel = (level, amt = 0.25) => mixWhite(moodColor(level), amt);
 
 export const moodColor = (level) => MOOD_LEVELS.find(m => m.level === level)?.color || '#9b9b9b';
 export const moodLabel = (level) => MOOD_LEVELS.find(m => m.level === level)?.label || 'Unknown';
@@ -37,7 +55,7 @@ export const FEELINGS = [
 ];
 
 export const FACTORS = [
-  'Work', 'Sleep', 'Exercise', 'Relationships', 'Health', 'Weather', 'Food', 'Hobbies',
+  'Work', 'Sleep', 'Exercise', 'Relationships', 'Health', 'Weather', 'Food', 'Hobbies','School',
 ];
 
 export const isoDate = (d) =>

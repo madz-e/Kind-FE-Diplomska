@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { theme } from '@/constants/theme';
 import { pastel } from '@/components';
 import { MOOD_LEVELS, moodColor, moodLabel } from '@/utils';
 
 const MoodSlider = ({ value = 3, onChange, saving, light = false }) => {
-  const [v, setV] = useState(value);
+  const [v, setV] = useState(value)
+  useEffect(() => {
+    setV(value);
+  }, [value]);
 
   return (
     <View style={styles.container}>

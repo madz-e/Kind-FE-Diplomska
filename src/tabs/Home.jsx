@@ -1,6 +1,15 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect,  useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  Switch,
+  Dimensions,
+  Animated
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -8,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/constants/theme';
 import { ScreenGradientBackground, pastel } from '@/components';
 import { SoftCard, SoftHeroCard, SoftIcon } from '@/components/home/SoftGlass';
+import TalkSwitch from '@/components/home/TalkSwitch';
 import {
   moodColor, moodLabel, AFFIRMATIONS,
   getGreeting, getCurrentWeek, isoDate,
@@ -20,6 +30,11 @@ import {
   useGetHabitsQuery,
   useCreateHabitMutation,
   useDeleteHabitMutation,
+  useToggleTalkFlagMutation,
+  useGetMyTalkFlagQuery,
+  useGetFriendsQuery,
+  useGetHabitsWeeksQuery,
+  useSavePushTokenMutation,
 } from '@/api/api';
 
 import CompanionAvatar from '@/components/home/CompanionAvatar';
@@ -29,6 +44,8 @@ import HabitModal from '@/components/home/HabitModal';
 import MeditationModal from '@/components/home/MeditationModal';
 import MeditationSession from '@/components/home/MeditationSession';
 import GuidedMeditationSession from '@/components/home/GuidedMeditationSession';
+import { registerForPushNotifications } from '@/utils/pushToken';
+import { habitIconName } from '@/components/home/HabitRow';
 
 const Home = () => {
   const insets   = useSafeAreaInsets();
@@ -41,6 +58,7 @@ const Home = () => {
   const [createMoodEntry, { isLoading: savingMood }] = useCreateMoodEntryMutation();
   const { data: moodEntries = [] } = useGetMoodEntriesQuery(userId, { skip: !userId });
   const moodsByDate = Object.fromEntries(moodEntries.map((e) => [e.date, e.moodValue]));
+  const todayMood = moodsByDate[isoDate(new Date())];
 
   const handleMoodSelect = async (level) => {
     if (!userId) { showErrorToast('Please log in again to save your mood'); return; }
@@ -103,6 +121,20 @@ const Home = () => {
     ]);
   };
 
+  const {data: habitsWeeks=[]}=useGetHabitsWeeksQuery(userId, { skip: !userId });
+
+  const SCREEN_WIDTH = Dimensions.get('window').width;
+  const CARD_WIDTH = SCREEN_WIDTH - theme.spacing.md * 2;
+  const PAGE_GAP = 16;
+  const SIDE_PAD = theme.spacing.lg;
+
+  const [activePage, setActivePage] = useState(0);
+
+  const handleScroll = (event) => {
+    const x = event.nativeEvent.contentOffset.x;
+    setActivePage(Math.round(x / (CARD_WIDTH + PAGE_GAP)));
+  };
+
   // ── UI state ────────────────────────────────────────────────────────────────
   const [affirmation]   = useState(AFFIRMATIONS[Math.floor(Math.random() * AFFIRMATIONS.length)]);
   const [habitModal,    setHabitModal]    = useState(false);
@@ -115,15 +147,51 @@ const Home = () => {
   const todayStr    = isoDate(new Date());
   const initials    = userName.slice(0, 1).toUpperCase();
 
+  //--talk flag--
+  const [talkFlagActive, setTalkFlagActive] = useState(false);
+  const [toggleTalkFlag,{isLoading: isTogglingTalk}]=useToggleTalkFlagMutation();
+  const { data: talkFlagData } = useGetMyTalkFlagQuery();
+
+  useEffect(() => {
+    if (talkFlagData) {
+      setTalkFlagActive(talkFlagData.talkFlagActive);
+    }
+  }, [talkFlagData]);
+
+  const handleToggleTalk= async()=>{
+    try{
+      const result = await toggleTalkFlag().unwrap();
+      setTalkFlagActive(result.talkFlagActive);
+      showSuccessToast("You are loved<3.");
+    }catch (err){
+      showErrorToast("Glitched:( try again please");
+    }
+  }
+  //-push-token
+
+  const [savePushToken]=useSavePushTokenMutation();
+  useEffect(() => {
+    registerForPushNotifications()
+      .then((token) =>{
+        if (token) {
+          savePushToken(token);}
+        })
+      .catch((err) => console.log('PUSH ERROR:', err));
+  }, []);
+
+  //--friends list
+  const { data: friendsList = [], isLoading: loadingFriends, isError } = useGetFriendsQuery(undefined, {refetchOnMountOrArgChange: true});
+  const activeFriends = friendsList.filter((friend)=>friend.talkFlagActive);
+
+
   return (
     <View style={{ flex: 1 }}>
       <ScreenGradientBackground />
 
-      <ScrollView
+      <Animated.ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.content, { paddingTop: insets.top + theme.spacing.md }]}
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         {/* Invisible per-habit status subscribers */}
         {habits.map((h) => (
           <HabitStatus key={`status-${h.id}`} habit={h} onStatus={handleStatus} />
@@ -138,20 +206,56 @@ const Home = () => {
           <CompanionAvatar animalId={selectedAnimal} />
         </View>
 
-        {/* Affirmation — CHANGED: distinct sparkle seed/count per card */}
-        <SoftHeroCard colors={[pastel.heroPurple, pastel.heroPink]} seed={7} sparkleCount={3}>
+        {/* Affirmation — distinct sparkle seed/count per card */}
+        <SoftHeroCard colors={[pastel.purple, pastel.pink]} seed={7} sparkleCount={3}>
           <View style={styles.affirmationHeader}>
             <MaterialCommunityIcons name="star-four-points" size={14} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.affirmationLabel}>DAILY AFFIRMATION</Text>
+            <Text style={[styles.affirmationLabel, styles.affirmationLabelShadow]}>DAILY AFFIRMATION</Text>
           </View>
           <Text style={styles.affirmationText}>{affirmation}</Text>
         </SoftHeroCard>
 
         {/* Mood picker — CHANGED: lighter / more pastel gradient (was the vivid hero
             tier, too saturated). Affirmation card above intentionally left unchanged. */}
-        <SoftHeroCard colors={[pastel.pink, pastel.purple, pastel.blue]} seed={3} sparkleCount={4}>
-          <MoodSlider onChange={handleMoodSelect} saving={savingMood} light />
+        <SoftHeroCard colors={[pastel.heroPink, pastel.purple, pastel.blue]} seed={3} sparkleCount={4}>
+          <MoodSlider value={todayMood ?? 3} onChange={handleMoodSelect} saving={savingMood} light />
         </SoftHeroCard>
+
+        {/* talk flag friends */}
+        <SoftCard seed={9} sparkleCount={3}>
+          <View style={styles.talkRow}>
+            <View style={styles.switchView}>
+              <Text style={styles.switchText}>{talkFlagActive?'ON':'OFF'}</Text>
+              <TalkSwitch
+                value={talkFlagActive}
+                onValueChange={handleToggleTalk}
+                disabled={isTogglingTalk}
+              />
+            </View>
+            <View style={styles.talkDivider} />
+            {activeFriends.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {activeFriends.map((f) => {
+                  const displayName = f.name || f.username || `User #${f.id}`;
+                  const initials = displayName.slice(0, 2).toUpperCase();
+                  return (
+                    <View key={f.id} style={styles.avatarWrapper}>
+                      <SoftIcon size={40} radius={16} tint="pink" style={styles.talkAvatar}>
+                        <Text style={styles.friendInitials}>{initials}</Text>
+                      </SoftIcon>
+                      <View style={styles.talkBadge}>
+                        <MaterialCommunityIcons name="heart" size={15} color="#fff" />
+                      </View>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            ) : (
+              <Text style={[styles.emptyText, { flex: 1, marginVertical: 0, paddingVertical: 0 }]}>
+                Everyone's settled right now 🩷
+              </Text>            )}
+          </View>
+        </SoftCard>
 
         {/* Week in Review */}
         <SoftCard seed={11} sparkleCount={3}>
@@ -182,24 +286,66 @@ const Home = () => {
         </SoftCard>
 
         {/* Habits preview */}
-        <SoftCard seed={5} sparkleCount={4}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Today's Habits</Text>
-            <Text style={[styles.cardSubtitle, { color: pastel.purpleDeep }]}>
-              {completedToday}/{habits.length}
-            </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3, paddingBottom: 5 }}>
+          <MaterialCommunityIcons name="circle" size={12} color={activePage === 0 ? pastel.purpleDeep : '#fff'} />
+          <MaterialCommunityIcons name="circle" size={12} color={activePage === 1 ? pastel.purpleDeep : '#fff'} />
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          snapToInterval={CARD_WIDTH + PAGE_GAP}
+          decelerationRate="fast"
+          style={{ marginHorizontal: -SIDE_PAD }}
+          contentContainerStyle={{ paddingHorizontal: SIDE_PAD, gap: PAGE_GAP }}
+        >
+          <View style={{ width: CARD_WIDTH }} >
+            <SoftCard seed={5} sparkleCount={4}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Today's Habits</Text>
+                <Text style={[styles.cardSubtitle, { color: pastel.purpleDeep }]}>
+                  {completedToday}/{habits.length}
+                </Text>
+              </View>
+              {habitsLoading ? (
+                <ActivityIndicator color={pastel.purpleDeep} style={{ marginVertical: theme.spacing.md }} />
+              ) : habits.length === 0 ? (
+                <Text style={styles.emptyText}>No habits yet. Tap below to add some.</Text>
+              ) : (
+                habits.map((h) => <HabitRow key={h.id} habit={h} />)
+              )}
+              <TouchableOpacity onPress={() => setHabitModal(true)} activeOpacity={0.7}>
+                <Text style={styles.seeMore}>Tap to manage habits →</Text>
+              </TouchableOpacity>
+            </SoftCard>
           </View>
-          {habitsLoading ? (
-            <ActivityIndicator color={pastel.purpleDeep} style={{ marginVertical: theme.spacing.md }} />
-          ) : habits.length === 0 ? (
-            <Text style={styles.emptyText}>No habits yet. Tap below to add some.</Text>
-          ) : (
-            habits.slice(0, 3).map((h) => <HabitRow key={h.id} habit={h} />)
-          )}
-          <TouchableOpacity onPress={() => setHabitModal(true)} activeOpacity={0.7}>
-            <Text style={styles.seeMore}>Tap to manage habits →</Text>
-          </TouchableOpacity>
-        </SoftCard>
+          <View style={{ width: CARD_WIDTH }}>
+            <SoftCard seed={6} sparkleCount={4}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Weekly progress</Text>
+              </View>
+              {
+                habitsWeeks.map((item)=>(
+                  <View key={item.habit.id} style={styles.habitWeekRow}>
+                    <Text style={styles.habitWeekName}>{item.habit.name}</Text>
+                    <View style={styles.weekSquaresRow}>
+                      <SoftIcon size={38} radius={13} baseColor={item.habit.colorHex || pastel.purpleDeep}>
+                        <MaterialCommunityIcons name={habitIconName(item.habit)} size={16} color="#fff" />
+                      </SoftIcon>
+                      {item.weekGrid.map((day,index)=>(
+                        <View key={index} style={[
+                          styles.weekSquare,
+                          { backgroundColor: day.completed ? item.habit.colorHex : 'rgba(255,255,255,0.5)' },
+                        ]} />
+                      ))}
+                    </View>
+                  </View>
+                ))
+              }
+            </SoftCard>
+          </View>
+        </ScrollView>
 
         {/* Meditation entry point */}
         <TouchableOpacity onPress={() => setMedModal(true)} activeOpacity={0.8}>
@@ -216,7 +362,7 @@ const Home = () => {
             </View>
           </SoftCard>
         </TouchableOpacity>
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* ── Modals (outside ScrollView so they render over everything) ── */}
       <HabitModal
@@ -259,21 +405,87 @@ const styles = StyleSheet.create({
   userName: { fontSize: theme.typography.fontSize.heading.md, fontWeight: '800', color: pastel.textDeep },
   affirmationHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: theme.spacing.xs, opacity: 0.9 },
   affirmationLabel: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.9)', letterSpacing: 1 },
+  affirmationLabelShadow: {
+    textShadowColor: 'rgba(139,92,246,0.45)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 15,
+  },
   affirmationText: { fontSize: theme.typography.fontSize.paragraph.lg, fontWeight: '700', color: '#fff', lineHeight: 26 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.sm },
   cardTitle: { fontSize: theme.typography.fontSize.paragraph.md, fontWeight: '700', color: pastel.textDeep },
   cardSubtitle: { fontSize: 10, fontWeight: '600', color: pastel.textMuted },
-  emptyText: { fontSize: theme.typography.fontSize.paragraph.sm, color: pastel.textMuted, paddingVertical: theme.spacing.sm },
+  emptyText: { fontSize: theme.typography.fontSize.paragraph.sm, color: pastel.textMuted, paddingVertical: theme.spacing.xs },
   weekRow: { flexDirection: 'row', alignItems: 'flex-end', height: 70, gap: 6, marginTop: theme.spacing.xs },
   weekCol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 4 },
-  // CHANGED: bars now have a shiny white border + clip so the gloss highlight sits inside
   weekBar: { width: '100%', borderRadius: 5, borderWidth: 1, borderColor: 'rgba(255,255,255,0.65)', overflow: 'hidden' },
   weekBarGloss: { position: 'absolute', top: 0, left: 0, right: 0, height: '45%', backgroundColor: 'rgba(255,255,255,0.5)' },
   weekDay: { fontSize: 10, fontWeight: '700', color: pastel.textMuted },
   seeMore: { fontSize: 11, fontWeight: '700', color: pastel.purpleDeep, marginTop: theme.spacing.xs },
   medRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   medTitle: { fontSize: theme.typography.fontSize.paragraph.sm, fontWeight: '700', color: pastel.textDeep },
-  medSub: { fontSize: 11, color: pastel.textMuted },
+  medSub: { fontSize: 12, color: pastel.textMuted },
+  talkRow: {
+    flexDirection: 'row',
+      alignItems: 'center',
+      gap: theme.spacing.sm,
+  },
+  talkDivider: {
+    width: 1,
+      height: 40,
+      backgroundColor: 'rgba(255,255,255)',
+  },
+  talkAvatar: {
+    marginRight: theme.spacing.xs,
+  },
+  friendInitials: {
+    fontSize: 14,
+      fontWeight: '800',
+      color: '#fff',
+  },
+  avatarWrapper:{
+    position: 'relative',
+    marginTop: 4
+  },
+  talkBadge:{
+    overflow: "visible",
+    position: 'absolute',
+    top: -4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 8,
+    backgroundColor: pastel.mint,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 0.8,
+    borderColor: '#fff',
+  },
+  habitWeekRow: {
+    marginBottom: theme.spacing.sm,
+  },
+  habitWeekName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: pastel.textDeep,
+    marginBottom: 4,
+  },
+  weekSquaresRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  weekSquare: {
+    width: 35,
+    height: 35,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  switchView:{
+    alignItems: "center",
+  },
+  switchText:{
+    fontSize: theme.typography.fontSize.paragraph.xs,
+    color: pastel.textMuted,
+  }
 });
 
 export default Home;

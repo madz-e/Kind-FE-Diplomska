@@ -15,6 +15,7 @@ const NavigationScreens = {
   JournalCreate: 'JournalCreate',
   ResourceDetail: 'ResourceDetail',
   Settings: 'Settings',
+  Friends: 'Friends',
 };
 
 export const TabBarScreens = {

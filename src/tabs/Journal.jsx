@@ -191,6 +191,24 @@ const Journal = () => {
       >
         <Text style={styles.pageTitle}>Journal</Text>
 
+        {/* CBT Thought Record — SoftHeroCard */}
+        <TouchableOpacity onPress={() => setTrOpen(true)} activeOpacity={0.85}>
+          <SoftHeroCard
+            colors={[pastel.heroBlue, '#C8A8FFBB', pastel.pink]}
+            seed={17} sparkleCount={4}>
+            <View style={styles.cbtRow}>
+              <SoftIcon size={44} radius={14} tint="lavender">
+                <MaterialCommunityIcons name="head-cog-outline" size={22} color="#fff" />
+              </SoftIcon>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cbtTitle}>Thought Record</Text>
+                <Text style={styles.cbtSubtitle}>Reframe an unhelpful thought in 7 guided steps</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={22} color="rgba(255,255,255,0.9)" />
+            </View>
+          </SoftHeroCard>
+        </TouchableOpacity>
+
         {/* Today's Prompts header */}
         <View style={styles.sectionHeader}>
           <MaterialCommunityIcons name="star-four-points" size={14} color={pastel.purpleDeep} />
@@ -246,24 +264,9 @@ const Journal = () => {
           label="Write freely"
           icon={<MaterialIcons name="add" size={18} color="#fff" />}
           onPress={() => startWith(undefined)}
+          colors={[pastel.heroBlue, '#C8A8FFBB', pastel.pink]}
           style={{ marginVertical: theme.spacing.md }}
         />
-
-        {/* CBT Thought Record — SoftHeroCard */}
-        <TouchableOpacity onPress={() => setTrOpen(true)} activeOpacity={0.85}>
-          <SoftHeroCard colors={[pastel.heroPurple, pastel.heroPink]} seed={17} sparkleCount={4}>
-            <View style={styles.cbtRow}>
-              <SoftIcon size={44} radius={14} tint="purple">
-                <MaterialCommunityIcons name="head-cog-outline" size={22} color="#fff" />
-              </SoftIcon>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cbtTitle}>Thought Record</Text>
-                <Text style={styles.cbtSubtitle}>Reframe an unhelpful thought in 7 guided steps</Text>
-              </View>
-              <MaterialIcons name="chevron-right" size={22} color="rgba(255,255,255,0.9)" />
-            </View>
-          </SoftHeroCard>
-        </TouchableOpacity>
 
         {/* Past Entries */}
         <Text style={styles.entriesTitle}>Past Entries</Text>
@@ -515,9 +518,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.55)',
   },
   entryHeader:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  entryDate:     { fontSize: 10, fontWeight: '700', color: pastel.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  entryDate:     { fontSize: 12, fontWeight: '700', color: pastel.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
   entryMoodDot:  { width: 12, height: 12, borderRadius: 6 },
-  entryPrompt:   { fontSize: 11, color: pastel.purpleDeep, fontStyle: 'italic', marginBottom: 6 },
+  entryPrompt:   { fontSize: 13, color: pastel.purpleDeep, fontStyle: 'italic', marginBottom: 6 },
   entryText:     { fontSize: theme.typography.fontSize.paragraph.sm, color: pastel.textDeep, lineHeight: 20 },
 
   swipeDeleteAction: { backgroundColor: pastel.rose, justifyContent: 'center', alignItems: 'center', width: 80, borderRadius: 18, marginBottom: 10 },

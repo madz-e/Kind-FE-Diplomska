@@ -29,18 +29,7 @@ import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { pastel } from '@/components';
-
-// blend a hex color toward white by `amt` (0..1)
-const mixWhite = (hex, amt) => {
-  const h = (hex || '#9C7BEA').replace('#', '');
-  const n = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
-  const r = parseInt(n.slice(0, 2), 16);
-  const g = parseInt(n.slice(2, 4), 16);
-  const b = parseInt(n.slice(4, 6), 16);
-  const mix = (c) => Math.round(c + (255 - c) * amt);
-  const to = (c) => c.toString(16).padStart(2, '0');
-  return `#${to(mix(r))}${to(mix(g))}${to(mix(b))}`;
-};
+import { mixWhite } from '@/utils';
 
 // tiny deterministic PRNG so a given seed always lays the sparkles down the same way
 const rng = (seed) => {
@@ -285,3 +274,4 @@ const s = StyleSheet.create({
     borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)',
   },
 });
+export const heroRingStyle = s.heroRing;

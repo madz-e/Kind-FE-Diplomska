@@ -41,9 +41,10 @@ const ActivePill = () => (
       {/* body fill — solid purple, CHANGED: darker top (#9C7BEA, purpleDeep)
           fading to the same light lavender bottom, for a stronger dark→light read */}
       <LinearGradient
-        colors={['#9C7BEA', '#DECEF9']}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
+        colors={['#6cb1ff', '#c9a0fd', '#ffbe85']}
+        locations={[0.2, 0.5, 0.8]}
+        start={{ x: 0, y: -0.3 }}
+        end={{ x: 1, y: 1.3 }}
         style={StyleSheet.absoluteFillObject}
       />
       {/* soft overall reflection fade, top-heavy */}

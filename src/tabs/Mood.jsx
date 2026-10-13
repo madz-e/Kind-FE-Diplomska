@@ -11,7 +11,16 @@ import { theme } from '@/constants/theme';
 // entry rows, and the delete-confirm icon.
 import { ScreenGradientBackground, GradientButton, pastel } from '@/components';
 import { SoftCard, SoftIcon } from '@/components/home/SoftGlass';
-import { MOOD_LEVELS, moodColor, moodLabel, moodEmoji, showErrorToast, showSuccessToast, isoDate } from '@/utils';
+import {
+  MOOD_LEVELS,
+  moodColor,
+  moodLabel,
+  moodEmoji,
+  showErrorToast,
+  showSuccessToast,
+  isoDate,
+  moodPastel,
+} from '@/utils';
 import { useAppSelector } from '@/store/store';
 import MoodInsightCard from '@/components/mood/MoodInsightCard';
 import {
@@ -20,6 +29,7 @@ import {
   useDeleteMoodEntryMutation,
   useGetEmotionsByCategoryQuery,
   useGetMoodFactorsQuery,
+  useGetEmotionsQuery
 } from '@/api/api';
 
 const moodValueToLevel = (v) => v;
@@ -61,8 +71,8 @@ const DayMoodCell = ({ day, levels }) => {
   // Single mood level logged that day → solid color, same as before
   if (uniqueLevels.length === 1) {
     return (
-      <View style={[styles.calDay, { backgroundColor: moodColor(uniqueLevels[0]) }]}>
-        <Text style={[styles.calDayText, { color: '#fff' }]}>{day}</Text>
+      <View style={[styles.calDay, { backgroundColor: moodPastel(uniqueLevels[0]) }]}>
+        <Text style={[styles.calDayText, styles.calDayTextLight]}>{day}</Text>
       </View>
     );
   }
@@ -75,15 +85,15 @@ const DayMoodCell = ({ day, levels }) => {
     return (
       <View style={styles.calDay}>
         <View style={[StyleSheet.absoluteFill, { flexDirection: 'row', borderRadius: 6, overflow: 'hidden' }]}>
-          <View style={{ flex: 1, backgroundColor: moodColor(a) }} />
-          <View style={{ flex: 1, backgroundColor: moodColor(b) }} />
+          <View style={{ flex: 1, backgroundColor: moodPastel(a) }} />
+          <View style={{ flex: 1, backgroundColor: moodPastel(b) }} />
         </View>
-        <Text style={[styles.calDayText, { color: '#fff' }]}>{day}</Text>
+        <Text style={[styles.calDayText, styles.calDayTextLight]}>{day}</Text>
       </View>
     );
   }
 
-  const quadColors = uniqueLevels.slice(0, 4).map(moodColor);
+  const quadColors = uniqueLevels.slice(0, 4).map((level) => moodPastel(level));
   while (quadColors.length < 4) quadColors.push(quadColors[quadColors.length - 1]);
 
   return (
@@ -98,7 +108,7 @@ const DayMoodCell = ({ day, levels }) => {
           <View style={{ flex: 1, backgroundColor: quadColors[3] }} />
         </View>
       </View>
-      <Text style={[styles.calDayText, { color: '#fff' }]}>{day}</Text>
+      <Text style={[styles.calDayText, styles.calDayTextLight]}>{day}</Text>
     </View>
   );
 };
@@ -111,8 +121,9 @@ const GlossyPill = ({ label, active, onPress, style, textStyle, radius = 20 }) =
     {active && (
       <>
         <LinearGradient
-          colors={[pastel.heroPurple, pastel.heroPink]}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          colors={['#6cb1ff','#c9a0fd','#ffbe85']}
+          locations={[0.25, 0.4,0.6]}
+          start={{ x: 0, y: -2.5 }} end={{ x: 1, y: 4 }}
           style={[StyleSheet.absoluteFillObject, { borderRadius: radius }]}
         />
         <LinearGradient
@@ -164,12 +175,6 @@ const MoodEntryRow = ({ entry, onRequestDelete }) => {
   const factors = entry.selectedFactors ? [...entry.selectedFactors] : [];
   const seed = Number(entry.id) || 1;
 
-  // CHANGED: Swipeable's row container is `overflow: 'hidden'` (it has to
-  // hide the off-screen delete action until swiped), which was clipping the
-  // SoftCard's shadow at that plain rectangular edge — turning the intended
-  // soft rounded shadow into a hard-edged square behind the card. Casting
-  // the shadow from this outer, unclipped wrapper instead (and telling the
-  // inner SoftCard to skip its own via `noShadow`) keeps the shadow rounded.
   return (
     <View style={styles.entryCardShadow}>
       <Swipeable ref={swipeRef} renderRightActions={renderRightActions} overshootRight={false}>
@@ -206,7 +211,10 @@ const Mood = () => {
   const [note, setNote] = useState('');
   const [done, setDone] = useState(false);
   const [month, setMonth] = useState(new Date());
-  const [pendingDelete, setPendingDelete] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null)
+  const [searchEmotion,setSearchEmotion]=useState('')
+  const [searchFactor,setSearchFactor]=useState('')
+
 
   const year = month.getFullYear();
   const monthNum = month.getMonth() + 1;
@@ -215,7 +223,22 @@ const Mood = () => {
     LEVEL_TO_CATEGORY[mood],
     { skip: !mood },
   );
+  const { data: allEmotions = [], isLoading: allEmotionsLoading } = useGetEmotionsQuery();
+  const isSearching = searchEmotion.trim().length > 0;
+  const extraSelected = feelings.filter((f) => !emotions.some((e) => e.id === f.id));
+  const sourceEmotions = isSearching ? allEmotions : [...emotions, ...extraSelected];
+  const filteredEmotions = sourceEmotions.filter((em)=>em.name.toLowerCase().includes(searchEmotion.trim().toLowerCase()));
+  const emotionsListLoading = isSearching ? allEmotionsLoading : emotionsLoading;
+
   const { data: moodFactors = [], isLoading: factorsLoading } = useGetMoodFactorsQuery();
+  const filteredFactors = moodFactors.filter((f) =>
+    f.name.toLowerCase().includes(searchFactor.trim().toLowerCase())
+  );
+  const isSearchingFactor = searchFactor.trim().length > 0;
+  const firstFactors = moodFactors.slice(0, 6);
+  const extraSelectedFactors = factors.filter((f) => !firstFactors.some((x) => x.id === f.id));
+  const visibleFactors = isSearchingFactor ? filteredFactors : [...firstFactors, ...extraSelectedFactors];
+
   const {
     data: monthEntries = [],
     isLoading: entriesLoading,
@@ -302,14 +325,13 @@ const Mood = () => {
       return acc;
     }, {})
   ).sort((a, b) => (a.date < b.date ? 1 : -1));
+  const STEP_COLORS = ['#9dcdff', '#c9a0fd', '#ffbe85'];
 
   return (
     <View style={{ flex: 1 }}>
       <ScreenGradientBackground />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingTop: insets.top + theme.spacing.md }]} showsVerticalScrollIndicator={false}>
         <Text style={styles.pageTitle}>Mood</Text>
-
-        {/* CHANGED: tabs are now glossy pills (gradient + sheen + border when active) */}
         <View style={styles.tabRow}>
           {(['track', 'insights']).map((t) => (
             <GlossyPill
@@ -317,8 +339,8 @@ const Mood = () => {
               label={t === 'track' ? 'Track' : 'Insights'}
               active={tab === t}
               onPress={() => setTab(t)}
-              style={styles.tabBtn}
-              textStyle={styles.tabText}
+              style={[styles.tabBtn, tab === t && styles.tabBtnActive]}
+              textStyle={[styles.tabText, tab === t && styles.tabTextActive]}
               radius={999}
             />
           ))}
@@ -345,11 +367,7 @@ const Mood = () => {
                   {[1, 2, 3].map((s) => (
                     <View key={s} style={styles.progressBar}>
                       {s <= step && (
-                        <LinearGradient
-                          colors={[pastel.heroPurple, pastel.heroPink]}
-                          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                          style={StyleSheet.absoluteFillObject}
-                        />
+                        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: STEP_COLORS[s - 1] }]} />
                       )}
                     </View>
                   ))}
@@ -385,20 +403,41 @@ const Mood = () => {
                   <View>
                     <Text style={styles.stepTitle}>Step 2</Text>
                     <Text style={styles.stepSub}>Choose a feeling</Text>
-                    {emotionsLoading ? (
+                    <View style={styles.searchBar}>
+                      <MaterialIcons name="search" size={22} color={pastel.purple} />
+                      <TextInput
+                        style={styles.searchBarText}
+                        value={searchEmotion}
+                        onChangeText={setSearchEmotion}
+                        placeholder="Search for a feeling..."
+                        placeholderTextColor={pastel.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        returnKeyType="done"
+                      />
+                      {searchEmotion.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchEmotion('')} hitSlop={10}>
+                          <MaterialIcons name="close" size={22} color={pastel.purple} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                      {emotionsListLoading ? (
                       <ActivityIndicator color={pastel.purpleDeep} />
                     ) : (
                       <View style={styles.chipsWrap}>
-                        {emotions.map((f) => (
-                          <GlossyPill
-                            key={f.id}
-                            label={f.name}
-                            active={feelings.some((x) => x.id === f.id)}
-                            onPress={() => toggleFeeling(f)}
-                            style={styles.chip}
-                            textStyle={styles.chipText}
-                          />
-                        ))}
+                        {filteredEmotions.map((f) => {
+                          const isActive = feelings.some((x) => x.id === f.id);
+                          return (
+                            <GlossyPill
+                              key={f.id}
+                              label={f.name}
+                              active={isActive}
+                              onPress={() => toggleFeeling(f)}
+                              style={styles.chip}
+                              textStyle={[styles.chipText, isActive && styles.selectedTextShadow]}
+                            />
+                          );
+                        })}
                       </View>
                     )}
                   </View>
@@ -408,20 +447,40 @@ const Mood = () => {
                   <View>
                     <Text style={styles.stepTitle}>Step 3</Text>
                     <Text style={styles.stepSub}>What influenced your mood?</Text>
+                    <View style={styles.searchBar}>
+                      <MaterialIcons name="search" size={22} color={pastel.purple} />
+                      <TextInput
+                        style={styles.searchBarText}
+                        value={searchFactor}
+                        onChangeText={setSearchFactor}
+                        placeholder="Search for a factor..."
+                        placeholderTextColor={pastel.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        returnKeyType="done"
+                      />
+                      {searchFactor.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchFactor('')} hitSlop={10}>
+                          <MaterialIcons name="close" size={22} color={pastel.purple} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
                     {factorsLoading ? (
                       <ActivityIndicator color={pastel.purpleDeep} />
                     ) : (
                       <View style={styles.chipsWrap}>
-                        {moodFactors.map((f) => (
-                          <GlossyPill
-                            key={f.id}
-                            label={f.name}
-                            active={factors.some((x) => x.id === f.id)}
-                            onPress={() => toggleFactor(f)}
-                            style={styles.chip}
-                            textStyle={styles.chipText}
-                          />
-                        ))}
+                        {visibleFactors.map((f) => {
+                          const isActive = factors.some((x) => x.id === f.id);
+                          return(
+                            <GlossyPill
+                              key={f.id}
+                              label={f.name}
+                              active={factors.some((x) => x.id === f.id)}
+                              onPress={() => toggleFactor(f)}
+                              style={styles.chip}
+                              textStyle={[styles.chipText, isActive && styles.selectedTextShadow]}
+                            />);
+                        })}
                       </View>
                     )}
 
@@ -450,6 +509,7 @@ const Mood = () => {
                     disabled={!canProceed}
                     onPress={next}
                     style={{ flex: 2 }}
+                    textStyle={styles.selectedTextShadow}
                   />
                 </View>
               </SoftCard>
@@ -494,10 +554,14 @@ const Mood = () => {
               )}
 
               <View style={styles.legend}>
-                {MOOD_LEVELS.map((m) => (
-                  <View key={m.level} style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: m.color }]} />
-                    <Text style={styles.legendText}>{m.label}</Text>
+                {[MOOD_LEVELS.slice(0, 3), MOOD_LEVELS.slice(3)].map((row, i) => (
+                  <View key={i} style={styles.legendRow}>
+                    {row.map((m) => (
+                      <View key={m.level} style={styles.legendItem}>
+                        <View style={[styles.legendDot, { backgroundColor: moodPastel(m.level) }]} />
+                        <Text style={styles.legendText}>{m.label}</Text>
+                      </View>
+                    ))}
                   </View>
                 ))}
               </View>
@@ -529,7 +593,6 @@ const Mood = () => {
         <Modal visible={!!pendingDelete} transparent animationType="fade" onRequestClose={() => setPendingDelete(null)}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalCard}>
-              {/* CHANGED: was a flat rose circle — now a glossy SoftIcon bubble */}
               <SoftIcon size={56} radius={28} baseColor={pastel.rose} style={{ marginBottom: theme.spacing.sm }}>
                 <MaterialIcons name="delete-outline" size={26} color="#fff" />
               </SoftIcon>
@@ -556,31 +619,60 @@ const styles = StyleSheet.create({
   content: { padding: theme.spacing.md, paddingBottom: 100 },
   pageTitle: { fontSize: theme.typography.fontSize.heading.md, fontWeight: '800', color: pastel.textDeep, marginBottom: theme.spacing.md },
   tabRow: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 22, padding: 5, marginBottom: theme.spacing.md, borderWidth: 1, borderColor: pastel.glassBorder, gap: 5 },
-  tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  tabText: { fontSize: 12, fontWeight: '700', color: pastel.textMuted },
+  tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 999, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  tabBtnActive: {
+    boxShadow: '0px 2px 6px rgba(139,92,246,0.35)',
+  },
+  tabText: { fontSize: 15, fontWeight: '700', color: pastel.textMuted },
+  tabTextActive: {
+    textShadowColor: 'rgba(74,46,122,0.45)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
   centered: { alignItems: 'center' },
   doneTitle: { fontSize: 18, fontWeight: '800', color: pastel.textDeep },
   doneSub: { fontSize: 12, color: pastel.textMuted, marginTop: 4, textAlign: 'center' },
   progressRow: { flexDirection: 'row', gap: 6, marginBottom: theme.spacing.md },
   progressBar: { flex: 1, height: 4, borderRadius: 2, backgroundColor: 'rgba(236,230,255,1)', overflow: 'hidden' },
   stepTitle: { fontSize: 14, fontWeight: '700', color: pastel.textDeep },
-  stepSub: { fontSize: 12, color: pastel.textMuted, marginBottom: theme.spacing.md },
+  stepSub: { fontSize: 13, color: pastel.textMuted, marginBottom: theme.spacing.md },
   moodRow: { flexDirection: 'row', justifyContent: 'space-between' },
   moodBtn: { alignItems: 'center', gap: 6 },
-  // CHANGED: active ring is now applied on top of the SoftIcon bubble itself
-  moodCircleActive: { borderWidth: 3, borderColor: 'rgba(255,255,255,0.9)',borderRadius: 20, transform: [{ scale: 1.1 }] },
+  moodCircleActive: { borderWidth: 3, borderColor: 'rgba(255,255,255,0.9)',borderRadius: 19, transform: [{ scale: 1.1 }] },
   moodEmoji: { fontSize: 24 },
   moodLabelBox: { width: 62, height: 28, alignItems: 'center', justifyContent: 'center' },
-  moodEmojiLabel: { fontSize: 11, fontWeight: '600', color: pastel.textMuted, textAlign: 'center' },
+  moodEmojiLabel: { fontSize: 12, fontWeight: '600', color: pastel.textMuted, textAlign: 'center' },
+  searchBar: {
+    backgroundColor: '#fff',
+    borderRadius: 999,
+    height: 35,
+    marginBottom: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    gap:8,
+  },
+  searchBarText: {
+    flex: 1,
+    color: pastel.textDeep,
+    fontSize: 14,
+    padding: 0,
+  },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  // CHANGED: base (inactive) chip is a frosted pill; GlossyPill layers the
-  // gradient + sheen + border on top only when active
   chip: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 1, borderColor: pastel.glassBorder,
     overflow: 'hidden',
   },
-  chipText: { fontSize: 12, fontWeight: '600', color: pastel.textDeep },
+  chipText: {
+    fontSize: 15, fontWeight: '600',
+    color: pastel.textDeep,
+  },
+  selectedTextShadow: {
+    textShadowColor: 'rgba(139,92,246,0.85)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
   noteInput: {
     minHeight: 90, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.5)',
     borderWidth: 1, borderColor: pastel.glassBorder,
@@ -588,7 +680,8 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.paragraph.sm, color: pastel.textDeep, marginTop: theme.spacing.xs,
   },
   navRow: { flexDirection: 'row', gap: theme.spacing.xs, marginTop: theme.spacing.md, alignItems: 'center' },
-  navBtnBack: { flex: 1, borderRadius: 999, paddingVertical: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.55)', borderWidth: 1, borderColor: pastel.glassBorder },
+  navBtnBack: { flex: 1, borderRadius: 999, paddingVertical: 14, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.55)', borderWidth: 1, borderColor: pastel.glassBorder,
+    boxShadow: '0px 1px 6px rgba(139,92,246,0.15)', },
   navBtnBackText: { fontWeight: '700', color: pastel.textDeep, fontSize: 13 },
   calHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.md },
   calTitle: { fontSize: 14, fontWeight: '700', color: pastel.textDeep },
@@ -600,18 +693,26 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)',
   },
   calDayText: { fontSize: 15, fontWeight: '700' },
-  legend: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 8, marginTop: theme.spacing.sm },
+  calDayTextLight: {
+    color: '#fff',
+    textShadowColor: 'rgba(139,92,246,0.95)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
+    alignSelf: 'stretch',
+    textAlign: 'center',
+    paddingVertical: 4,
+  },
+  legend: { gap: 8, marginTop: theme.spacing.sm },
+  legendRow: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 10, height: 10, borderRadius: 3 },
-  legendText: { fontSize: 9, fontWeight: '600', color: pastel.textMuted },
+  legendText: { fontSize: 11, fontWeight: '600', color: pastel.textMuted },
   entriesHeading: { fontSize: 14, fontWeight: '800', color: pastel.textDeep, marginBottom: theme.spacing.sm, marginTop: theme.spacing.xs },
   emptyEntries: { alignItems: 'center', gap: 8, paddingVertical: theme.spacing.lg },
   emptyEntriesText: { fontSize: 12, color: pastel.textMuted, fontWeight: '600' },
   daySection: { marginBottom: theme.spacing.md },
   dayLabel: { fontSize: 11, fontWeight: '700', color: pastel.textMuted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
-  // Shadow lives here (outside the Swipeable) instead of on the SoftCard —
-  // see the CHANGED note above MoodEntryRow. Border radius + background
-  // match SoftCard's own defaults so nothing shows through at the corners.
+
   entryCardShadow: {
     borderRadius: 24,
     backgroundColor: '#F0E8FC',

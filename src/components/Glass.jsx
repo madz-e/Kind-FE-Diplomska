@@ -16,9 +16,8 @@ import React from 'react';
 // all share the same pastel pill button as the Home screen, instead of each tab
 // re-styling a flat purple button locally).
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-
+import { LinearGradient } from 'expo-linear-gradient';
 // ── Token system ──────────────────────────────────────────────────────────────
 // CHANGED: settled on a clear 3-tier saturation hierarchy so nothing reads as
 // flatly "white" anymore —
@@ -80,9 +79,9 @@ const GLOW = {
 // "glass" (you can see color through them) and stay thematically tied to their glow.
 const TINT = {
   purple: ['rgba(199,168,242,0.68)', 'rgba(255,255,255,0.40)'],
-  mint:   ['rgba(150,235,210,0.68)', 'rgba(255,255,255,0.40)'],
-  pink:   ['rgba(255,176,205,0.68)', 'rgba(255,255,255,0.40)'],
-  none:   ['rgba(255,255,255,0.62)', 'rgba(255,255,255,0.40)'],
+  mint: ['rgba(150,235,210,0.68)', 'rgba(255,255,255,0.40)'],
+  pink: ['rgba(255,176,205,0.68)', 'rgba(255,255,255,0.40)'],
+  none: ['rgba(255,255,255,0.62)', 'rgba(255,255,255,0.40)'],
 };
 
 // ── Screen background ─────────────────────────────────────────────────────────
@@ -117,9 +116,14 @@ const GlossBlob = ({ size = 90, top = -28, left = -22, opacity = 0.4 }) => (
   <View
     pointerEvents="none"
     style={{
-      position: 'absolute', top, left,
-      width: size, height: size, borderRadius: size / 2,
-      backgroundColor: 'rgba(255,255,255,1)', opacity,
+      position: 'absolute',
+      top,
+      left,
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      backgroundColor: 'rgba(255,255,255,1)',
+      opacity,
     }}
   />
 );
@@ -139,15 +143,27 @@ const CardShine = ({ sparkleColorDim }) => (
 export const GlossyCircle = ({ size = 40, backgroundColor, children, style }) => (
   <View
     style={[
-      { width: size, height: size, borderRadius: size / 2, backgroundColor, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+      {
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor,
+        overflow: 'hidden',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
       style,
     ]}
   >
     <View
       pointerEvents="none"
       style={{
-        position: 'absolute', top: -size * 0.05, left: -size * 0.05,
-        width: size * 0.95, height: size * 0.95, borderRadius: size * 0.475,
+        position: 'absolute',
+        top: -size * 0.05,
+        left: -size * 0.05,
+        width: size * 0.95,
+        height: size * 0.95,
+        borderRadius: size * 0.475,
         backgroundColor: 'rgba(255,255,255,0.55)',
       }}
     />
@@ -165,7 +181,10 @@ export const GlassCard = ({ children, style, glow = 'purple', radius = 24, noPad
   // previously hardcoded to 24 regardless of `radius`, which on cards using a
   // different radius left the shadow's corner-rounding slightly mismatched from
   // the visible card, reading as a faint square peeking through the corners.
-  <View style={[ggStyles.shadowWrap, { borderRadius: radius, shadowColor: GLOW[glow] || GLOW.purple }, style]} {...rest}>
+  <View
+    style={[ggStyles.shadowWrap, { borderRadius: radius, shadowColor: GLOW[glow] || GLOW.purple }, style]}
+    {...rest}
+  >
     <View style={[ggStyles.clip, { borderRadius: radius }]}>
       <LinearGradient
         colors={TINT[glow] || TINT.purple}
@@ -191,17 +210,25 @@ export const GlassCard = ({ children, style, glow = 'purple', radius = 24, noPad
 // The signature "weather mood" treatment: a diagonal pastel gradient with a
 // glass sheen + light edge, used for the affirmation and mood cards.
 export const GradientHeroCard = ({
-                                   children,
-                                   style,
-                                   colors = [pastel.heroPink, pastel.heroPurple, pastel.heroBlue],
-                                   glow = 'purple',
-                                   radius = 28,
-                                   ...rest
-                                 }) => (
+  children,
+  style,
+  colors = [pastel.heroPink, pastel.heroPurple, pastel.heroBlue],
+  glow = 'purple',
+  radius = 28,
+  ...rest
+}) => (
   // CHANGED: same borderRadius-mismatch fix as GlassCard — this was the more
   // visible instance of the bug, since GradientHeroCard's inner radius (28)
   // never matched the outer shadow's hardcoded 24.
-  <View style={[ggStyles.shadowWrap, ggStyles.heroShadow, { borderRadius: radius, shadowColor: GLOW[glow] || GLOW.purple }, style]} {...rest}>
+  <View
+    style={[
+      ggStyles.shadowWrap,
+      ggStyles.heroShadow,
+      { borderRadius: radius, shadowColor: GLOW[glow] || GLOW.purple },
+      style,
+    ]}
+    {...rest}
+  >
     <LinearGradient
       colors={colors}
       start={{ x: 0, y: 0 }}
@@ -237,19 +264,19 @@ export const GradientHeroCard = ({
 //   glow     — 'purple' | 'pink' | 'mint' shadow tint (default 'purple')
 //   style    — extra wrapper style (e.g. { flex: 2 })
 export const GradientButton = ({
-                                 label,
-                                 children,
-                                 icon,
-                                 onPress,
-                                 disabled,
-                                 loading,
-                                 small,
-                                 colors = [pastel.heroPink, pastel.heroPurple, pastel.heroBlue],
-                                 glow = 'purple',
-                                 style,
-                                 textStyle,
-                                 ...rest
-                               }) => (
+  label,
+  children,
+  icon,
+  onPress,
+  disabled,
+  loading,
+  small,
+  colors = ['#6cb1ff', '#c9a0fd', '#ffbe85'],
+  glow = 'purple',
+  style,
+  textStyle,
+  ...rest
+}) => (
   <TouchableOpacity
     activeOpacity={0.85}
     onPress={onPress}
@@ -260,8 +287,9 @@ export const GradientButton = ({
     <View style={[ggStyles.btnShadow, { shadowColor: GLOW[glow] || GLOW.purple }]}>
       <LinearGradient
         colors={colors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
+        locations={colors.length === 3 ? [0.25, 0.4, 0.6] : undefined}
+        start={{ x: 0, y: -2.5 }}
+        end={{ x: 1, y: 4 }}
         style={[ggStyles.btnFill, small && ggStyles.btnFillSmall]}
       >
         {/* glossy top-left sheen, same recipe as the cards */}
@@ -272,14 +300,23 @@ export const GradientButton = ({
           style={[StyleSheet.absoluteFillObject, { borderRadius: 999 }]}
           pointerEvents="none"
         />
+        <View
+          style={[
+            StyleSheet.absoluteFillObject,
+            { borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.75)' },
+          ]}
+          pointerEvents="none"
+        />
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
           <>
             {icon}
-            {label != null
-              ? <Text style={[ggStyles.btnText, small && { fontSize: 13 }, textStyle]}>{label}</Text>
-              : children}
+            {label != null ? (
+              <Text style={[ggStyles.btnText, small && { fontSize: 13 }, textStyle]}>{label}</Text>
+            ) : (
+              children
+            )}
           </>
         )}
       </LinearGradient>
@@ -298,24 +335,45 @@ const ggStyles = StyleSheet.create({
   heroShadow: { shadowOpacity: 0.32, shadowRadius: 22, elevation: 8 },
   clip: { overflow: 'hidden' },
   border: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    borderWidth: 1, borderColor: pastel.glassBorder,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 1,
+    borderColor: pastel.glassBorder,
   },
   heroBorder: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
   },
   padding: { padding: 18 },
-  // NEW: GradientButton
   btnShadow: {
     borderRadius: 999,
-    shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 6 },
-    elevation: 5,
+    boxShadow: '0px 2px 6px rgba(139,92,246,0.25)',
   },
   btnFill: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 15, paddingHorizontal: 24, borderRadius: 999, overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 15,
+    paddingHorizontal: 24,
+    borderRadius: 999,
+    overflow: 'hidden',
   },
   btnFillSmall: { paddingVertical: 11, paddingHorizontal: 18 },
-  btnText: { color: '#fff', fontWeight: '800', fontSize: 15, letterSpacing: 0.2 },
-});
+  btnText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 15,
+    letterSpacing: 0.2,
+    textShadowColor: 'rgba(139,92,246,0.85)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },});

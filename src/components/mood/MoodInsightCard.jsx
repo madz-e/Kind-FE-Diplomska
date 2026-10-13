@@ -24,14 +24,9 @@ const moodWord = (trend, severity) => {
   return MOOD_WORD[`${trend}_${severity}`] ?? 'varied';
 };
 
-const CARD_GRADIENT   = ['#FFCBA4', '#C8A5F5', '#8EC5FC'];
+const CARD_GRADIENT   = ['#ffb884', '#C8A5F5', '#8EC5FC'];
 const CRISIS_GRADIENT = ['#FFB8C6', '#E8A0BF', '#C48DD9'];
 
-// CHANGED: was a hand-rolled LinearGradient card with its own gloss blob,
-// reflection sheen, two fixed sparkles, and shadow. Now uses SoftHeroCard
-// directly — same component Home's affirmation/mood cards use — so this gets
-// the same seeded sparkle scatter, two-layer sheen, ring, and shadow depth
-// as everything else, instead of a separately hand-tuned approximation of it.
 const MoodInsightCard = () => {
   const userId = useAppSelector((state) => state.userState.userId);
   const { data, isLoading, isError } = useGetInsightTodayQuery(undefined, { skip: !userId });
@@ -109,9 +104,6 @@ const MoodInsightCard = () => {
 };
 
 const styles = StyleSheet.create({
-  // CHANGED: SoftHeroCard owns its own marginBottom (18) — this just nudges
-  // it to line up with the rest of the screen's spacing (was 16 on the old
-  // hand-rolled card); harmless to leave as an extra style override.
   cardMargin: { marginBottom: 16 },
   loadingInner: {
     flexDirection: 'row',
@@ -138,22 +130,33 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#fff',
     letterSpacing: 0.2,
+    textShadowColor: 'rgba(139,92,246,0.45)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
   },
   summaryLine: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.88)',
+    fontSize: 15,
+    fontStyle: "italic",
+    fontWeight: '500',
+    color: '#fff',
     marginBottom: 6,
     lineHeight: 19,
+    textShadowColor: 'rgba(139,92,246,0.9)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 9,
   },
   summaryBold: {
     fontWeight: '800',
     color: '#fff',
   },
   feelingText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#fff',
-    fontWeight: '500',
+    fontWeight: '600',
     lineHeight: 21,
+    textShadowColor: 'rgba(139,92,246,0.65)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 2,
   },
   divider: {
     height: 1,
@@ -161,18 +164,25 @@ const styles = StyleSheet.create({
     marginVertical: 14,
   },
   tryLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
-    color: 'rgba(255,255,255,0.72)',
+    fontStyle: "italic",
+    color: '#fff',
     textTransform: 'uppercase',
     letterSpacing: 0.9,
     marginBottom: 7,
+    textShadowColor: 'rgba(139,92,246,0.65)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 7,
   },
   recText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#fff',
     fontWeight: '600',
     lineHeight: 21,
+    textShadowColor: 'rgba(139,92,246,0.65)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 2,
   },
   whyRow: {
     flexDirection: 'row',
@@ -186,7 +196,7 @@ const styles = StyleSheet.create({
   },
   whyText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 14,
     color: 'rgba(255,255,255,0.92)',
     lineHeight: 17,
     fontStyle: 'italic',

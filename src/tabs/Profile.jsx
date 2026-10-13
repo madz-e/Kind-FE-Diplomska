@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Switch,
+  Modal,
+  ActivityIndicator, TextInput,
+} from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as SecureStore from 'expo-secure-store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/constants/theme';
-// CHANGED: switched from Glass.jsx's GlassCard/GlossyCircle to the same
-// SoftCard/SoftIcon primitives Home and Journal actually use.
 import { ScreenGradientBackground, pastel } from '@/components';
 import { SoftCard, SoftIcon } from '@/components/home/SoftGlass';
 import { useAppDispatch, useAppSelector } from '@/store/store';
@@ -16,12 +24,16 @@ import {
   applyAffirmationSettings,
   DEFAULT_SETTINGS,
 } from '@/utils/notifications';
-import { countActiveDays, computeStreak, getCurrentWeek, isoDate } from '@/utils';
+import { countActiveDays, computeStreak, getCurrentWeek, isoDate, showSuccessToast, showErrorToast  } from '@/utils';
 import {
   useGetMoodEntriesQuery,
   useGetJournalEntriesQuery,
   useGetBreathingSessionsQuery,
+  useGetFriendsQuery,
+  useAddFriendMutation
+
 } from '@/api/api';
+import Toast from 'react-native-toast-message';
 
 // 24h -> "9:00 AM"
 const formatTime = (h, m) => {
@@ -48,6 +60,39 @@ const Profile = () => {
   const userName = appState?.userName || 'Friend';
   const initials = userName.slice(0, 2).toUpperCase();
   const userId = useAppSelector((s) => s.userState.userId);
+
+  const [friendsModalVisible, setFriendsModalVisible] = useState(false);
+
+  const { data: friendsList = [], isLoading: loadingFriends, isError } = useGetFriendsQuery(undefined, {
+    skip: !friendsModalVisible, refetchOnMountOrArgChange: true
+  });
+
+  const handleOpenFriendsModal = () => {
+    setFriendsModalVisible(true);
+  };
+
+  const [addFriend, { isLoading: isAdding }] = useAddFriendMutation();
+  const [emailInput, setEmailInput] = useState('');
+
+  const handleAddFriend = async ()=>{
+    const email=emailInput.trim();
+    if (!email){
+        showErrorToast('"Please enter your friend\'s email."');
+        return;
+     }
+    try{
+      await addFriend(email).unwrap();
+      setEmailInput('');
+      showSuccessToast('Friend added!', `${email} is now your friend.`);
+    }
+    catch (err) {
+      const message =
+        typeof err?.data === 'string'
+          ? err.data
+          : err?.data?.message || 'Failed to add friend.';
+      showErrorToast(message);
+    }
+  }
 
   // ── Stats (real data) ──────────────────────────────────────────────────────
   const { data: moodEntries = [] } = useGetMoodEntriesQuery(userId, { skip: !userId });
@@ -164,6 +209,21 @@ const Profile = () => {
           </View>
         </SoftCard>
 
+        <SoftCard seed={14} sparkleCount={3} fill={['rgba(199,168,242,0.42)', 'rgba(255,255,255,0.42)']}>
+          <TouchableOpacity activeOpacity={0.7} onPress={handleOpenFriendsModal}>
+          <View style={styles.affHeaderRow}>
+            <SoftIcon size={36} radius={12} tint="pink">
+              <MaterialCommunityIcons name="account-group" size={18} color="#fff" />
+            </SoftIcon>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingLabel}>My friends</Text>
+              <Text style={styles.settingDesc}>See all the friends you've added!</Text>
+            </View>
+              <MaterialIcons name="chevron-right" size={18} color={pastel.textMuted} />
+          </View>
+          </TouchableOpacity>
+        </SoftCard>
+
         <Text style={styles.sectionTitle}>Settings</Text>
 
         <SoftCard seed={15} sparkleCount={3} fill={['rgba(199,168,242,0.42)', 'rgba(255,255,255,0.42)']}>
@@ -246,6 +306,118 @@ const Profile = () => {
 
         <Text style={styles.version}>Kind v1.0.0 · Made with 💜</Text>
       </ScrollView>
+      {/*My Friends*/}
+      <Modal
+        visible={friendsModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setFriendsModalVisible(false)}
+      >
+        <View style={{ flex: 1 }}>
+          <ScreenGradientBackground />
+
+          {/* Modal Header */}
+          <View style={[styles.modalHeader, { paddingTop: insets.top + theme.spacing.sm }]}>
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setFriendsModalVisible(false)}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="arrow-back" size={22} color={pastel.purpleDeep} />
+            </TouchableOpacity>
+
+            <Text style={styles.modalTitle}>My Friends</Text>
+            <TouchableOpacity
+              style={styles.addFriendBtn}
+              disabled
+              activeOpacity={0.7}
+            >
+              {isAdding ? (
+                <ActivityIndicator size="small" color={pastel.purpleDeep} />
+              ) : (
+                <MaterialIcons name="group-add" size={20} color={pastel.purpleDeep} />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Friends List Container */}
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+          >
+            <SoftCard seed={31} sparkleCount={3} fill={['rgba(199,168,242,0.42)', 'rgba(255,255,255,0.42)']}>
+              <View style={styles.addFriendRow}>
+                <TextInput
+                  style={styles.emailInput}
+                  value={emailInput}
+                  onChangeText={setEmailInput}
+                  placeholder="Friend's email"
+                  placeholderTextColor={pastel.textMuted}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onSubmitEditing={handleAddFriend}
+                  returnKeyType="done"
+                />
+                <TouchableOpacity
+                  style={styles.addFriendBtn}
+                  onPress={handleAddFriend}
+                  disabled={isAdding || !emailInput.trim()}
+                  activeOpacity={0.7}
+                >
+                  {isAdding ? (
+                    <ActivityIndicator size="small" color={pastel.purpleDeep} />
+                  ) : (
+                    <SoftIcon size={36} radius={12} tint="purple">
+                      <MaterialIcons name="person-add" size={20} color="#fff" />
+                    </SoftIcon>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </SoftCard>
+
+            <Text style={styles.friendsCountText}>
+              {friendsList.length} friend{friendsList.length === 1 ? '' : 's'} connected
+            </Text>
+
+            <SoftCard seed={30} sparkleCount={3} fill={['rgba(199,168,242,0.42)', 'rgba(255,255,255,0.42)']}>
+              {loadingFriends ? (
+                <ActivityIndicator style={{ paddingVertical: theme.spacing.lg }} color={pastel.purpleDeep} />
+              ) : isError ? (
+                <Text style={styles.emptyText}>Failed to load friends list.</Text>
+              ) : friendsList.length === 0 ? (
+                <Text style={styles.emptyText}>No friends added yet. Tap + to add one!</Text>
+              ) : (
+                friendsList.map((friend, i) => {
+                  const displayName = friend.name || friend.username || `User #${friend.id}`;
+                  const initials = displayName.slice(0, 2).toUpperCase();
+
+                  return (
+                    <View
+                      key={friend.id}
+                      style={[styles.friendRow, i < friendsList.length - 1 && styles.settingDivider]}
+                    >
+                      <SoftIcon size={40} radius={14} tint="pink">
+                        <Text style={styles.friendInitials}>{initials}</Text>
+                      </SoftIcon>
+
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.settingLabel}>{displayName}</Text>
+                        <Text style={styles.settingDesc}>
+                          {friend.email || `@${friend.username || friend.id}`}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </SoftCard>
+          </ScrollView>
+        </View>
+        <Toast />
+      </Modal>
+
     </View>
   );
 };
@@ -295,6 +467,77 @@ const styles = StyleSheet.create({
   },
   signOutText: { fontSize: 14, fontWeight: '700', color: pastel.rose },
   version: { textAlign: 'center', fontSize: 11, color: pastel.textMuted, marginBottom: theme.spacing.sm },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
+  },
+  modalCloseBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderWidth: 1,
+    borderColor: pastel.glassBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addFriendBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderWidth: 1,
+    borderColor: pastel.glassBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    fontSize: theme.typography.fontSize.heading.sm,
+    fontWeight: '800',
+    color: pastel.textDeep,
+  },
+  friendsCountText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: pastel.textMuted,
+    marginBottom: theme.spacing.sm,
+  },
+  friendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+  },
+  friendInitials: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  emptyText: {
+    fontSize: 13,
+    color: pastel.textMuted,
+    textAlign: 'center',
+    paddingVertical: theme.spacing.md,
+  },
+  addFriendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  emailInput: {
+    flex: 1,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderWidth: 1,
+    borderColor: pastel.glassBorder,
+    paddingHorizontal: theme.spacing.sm,
+    fontSize: 14,
+    color: pastel.textDeep,
+  },
 });
 
 export default Profile;

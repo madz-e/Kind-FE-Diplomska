@@ -40,7 +40,19 @@ const baseQueryWithBearer = async (args, api, extraOptions) => {
 export const cdtApi = createApi({
   reducerPath: 'cdtApi',
   baseQuery: baseQueryWithBearer,
-  tagTypes: ['User', 'MoodEntry', 'JournalEntry', 'JournalPrompt', 'Emotion', 'MoodFactor', 'Habit', 'HabitLog', 'Insight', 'BreathingSession'],
+  tagTypes: [
+    'User',
+    'MoodEntry',
+    'JournalEntry',
+    'JournalPrompt',
+    'Emotion',
+    'MoodFactor',
+    'Habit',
+    'HabitLog',
+    'Insight',
+    'BreathingSession',
+    'Friends',
+  ],
   endpoints: (builder) => ({
     // --- User ---
     getUserByEmail: builder.query({
@@ -56,14 +68,14 @@ export const cdtApi = createApi({
       invalidatesTags: ['User'],
     }),
 
+
     // --- Mood ---
     getMoodEntries: builder.query({
       query: (userId) => `api/mood-entries/user/${userId}`,
       providesTags: ['MoodEntry'],
     }),
     getMoodEntriesByMonth: builder.query({
-      query: ({ userId, year, month }) =>
-        `api/mood-entries/user/${userId}/calendar/${year}/${month}`,
+      query: ({ userId, year, month }) => `api/mood-entries/user/${userId}/calendar/${year}/${month}`,
       providesTags: ['MoodEntry'],
     }),
     createMoodEntry: builder.mutation({
@@ -153,10 +165,7 @@ export const cdtApi = createApi({
         url: `api/habits/${habitId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, habitId) => [
-        'Habit',
-        { type: 'HabitLog', id: habitId },
-      ],
+      invalidatesTags: (result, error, habitId) => ['Habit', { type: 'HabitLog', id: habitId }],
     }),
 
     // --- Insights ---
@@ -189,9 +198,10 @@ export const cdtApi = createApi({
         url: `api/habits/${habitId}/logs/today?completed=${completed}`,
         method: 'POST',
       }),
-      invalidatesTags: (result, error, { habitId }) => [
-        { type: 'HabitLog', id: habitId },
-      ],
+      invalidatesTags: (result, error, { habitId }) => [{ type: 'HabitLog', id: habitId },'HabitLog'],
+    }),
+    getHabitsWeeks:builder.query({ query: (userId) =>`api/habits/user/${userId}/weeks`,
+      providesTags: ['HabitLog','Habit'],
     }),
 
     // --- Breathing Sessions ---
@@ -208,6 +218,34 @@ export const cdtApi = createApi({
         body: data,
       }),
       invalidatesTags: ['BreathingSession'],
+    }),
+    // --- Friends ---
+    getFriends: builder.query({
+      query: () => 'api/friends/list',
+      providesTags: ['Friends'],
+    }),
+    addFriend: builder.mutation({
+      query: (friendEmail) => ({
+        url: `api/friends/add?friendEmail=${encodeURIComponent(friendEmail)}`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Friends'],
+    }),
+    toggleTalkFlag: builder.mutation({
+      query: () => ({
+        url: 'api/friends/toggle-talk-flag',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Friends']    }),
+    getMyTalkFlag: builder.query({
+      query: () => 'api/friends/me/talk-flag',
+    }),
+    savePushToken: builder.mutation({
+      query: (pushToken)=>({
+        url: 'api/friends/save-push-token',
+        method: 'PUT',
+        params: {pushToken: pushToken}
+      }),
     }),
   }),
 });
@@ -236,4 +274,10 @@ export const {
   useGetJournalPromptsByTypeQuery,
   useGetBreathingSessionsQuery,
   useCreateBreathingSessionMutation,
+  useGetFriendsQuery,
+  useAddFriendMutation,
+  useToggleTalkFlagMutation,
+  useGetMyTalkFlagQuery,
+  useGetHabitsWeeksQuery,
+  useSavePushTokenMutation
 } = cdtApi;
