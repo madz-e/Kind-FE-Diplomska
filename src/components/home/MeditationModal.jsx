@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { theme } from '@/constants/theme';
-import { pastel } from '@/components';
+import { pastel, GradientButton } from '@/components';
 import { SoftIcon } from '@/components/home/SoftGlass';
 import SwipeDismissSheet from './SwipeDismissSheet';
+
+const fs = theme.typography.fontSize;
+
+// Meditation palette, from the app's pastel tokens: mint flowing into blue
+const SEA = pastel.mint;                                   // guided icons
+const SEA_DEEP = pastel.mintDeep;                          // small accents (idle icons, durations)
+const MED_GRADIENT = [pastel.mint, pastel.blue];           // selected items + button
+const MED_HERO = [pastel.mint + 'DD', pastel.blue + 'CC']; // header strip
+const FROSTED = 'rgba(255,255,255,0.7)';                   // idle items on the lavender panel
 
 const SOUND_ICONS = {
   Rain: 'weather-rainy',
@@ -17,11 +27,21 @@ const SOUNDS = ['Rain', 'Ocean', 'Forest', 'White noise'];
 const DURATIONS = [5, 10, 15, 20, 30];
 
 const GUIDED_TYPES = [
-  { name: 'Body Scan',       desc: 'Release tension head to toe',   icon: 'human',                duration: '10 min', color: pastel.mintDeep },
-  { name: 'Loving Kindness', desc: 'Cultivate compassion',          icon: 'heart-outline',        duration: '8 min',  color: pastel.rose },
-  { name: 'Focus',           desc: 'Train sustained attention',     icon: 'eye-outline',          duration: '10 min', color: pastel.heroBlue },
-  { name: 'Sleep',           desc: 'Drift off peacefully',          icon: 'moon-waning-crescent', duration: '12 min', color: pastel.purpleDeep },
+  { name: 'Body Scan',       desc: 'Release tension head to toe', icon: 'human',                duration: '10 min' },
+  { name: 'Loving Kindness', desc: 'Cultivate compassion',        icon: 'heart-outline',        duration: '8 min' },
+  { name: 'Focus',           desc: 'Train sustained attention',   icon: 'eye-outline',          duration: '10 min' },
+  { name: 'Sleep',           desc: 'Drift off peacefully',        icon: 'moon-waning-crescent', duration: '12 min' },
 ];
+
+// Frosted white when idle, mint→blue gradient when selected.
+const Selectable = ({ active, onPress, style, children }) => (
+  <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[style, active && styles.activeShadow]}>
+    {active && (
+      <LinearGradient colors={MED_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+    )}
+    {children}
+  </TouchableOpacity>
+);
 
 // onStart        receives { sound, duration }  — sound + timer sessions
 // onStartGuided  receives { type }             — AI guided sessions
@@ -31,150 +51,150 @@ const MeditationModal = ({ visible, onClose, onStart, onStartGuided }) => {
   const [duration, setDuration] = useState(5);
 
   return (
-    <SwipeDismissSheet visible={visible} onClose={onClose}>
-      <Text style={styles.title}>Meditation</Text>
+    <SwipeDismissSheet visible={visible} onClose={onClose}   backgroundColors={[pastel.blueSoft, pastel.navBlue]}
+                       handleColor="rgba(34,184,160,0.4)">
+      {/* ── Header strip ── */}
+      <View style={styles.hero}>
+        <LinearGradient colors={MED_HERO} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient
+          colors={['rgba(255,255,255,0.35)', 'rgba(255,255,255,0)']}
+          start={{ x: 0.1, y: 0 }} end={{ x: 0.5, y: 0.9 }}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+        <Text style={styles.heroKicker}>MEDITATION</Text>
+        <Text style={styles.heroTitle}>Take a few minutes for yourself</Text>
+      </View>
 
+      {/* ── Mode tabs ── */}
       <View style={styles.tabRow}>
         {['sound', 'guided'].map((m) => (
-          <TouchableOpacity
-            key={m}
-            onPress={() => setMode(m)}
-            style={[styles.tab, mode === m && styles.tabActive]}
-          >
-            <Text style={[styles.tabText, mode === m && styles.tabTextActive]}>
+          <Selectable key={m} active={mode === m} onPress={() => setMode(m)} style={styles.tab}>
+            <Text style={[styles.tabText, mode === m && styles.whiteText]}>
               {m === 'sound' ? 'Sound + Timer' : 'Guided'}
             </Text>
-          </TouchableOpacity>
+          </Selectable>
         ))}
       </View>
 
       {mode === 'sound' ? (
         <View>
-          <Text style={styles.label}>Pick a sound</Text>
-          <View style={styles.soundGrid}>
+          <Text style={styles.label}>Sound</Text>
+          <View style={styles.row}>
             {SOUNDS.map((s) => (
-              <TouchableOpacity
-                key={s}
-                onPress={() => setSound(s)}
-                style={[styles.soundChip, sound === s && styles.soundChipActive]}
-              >
+              <Selectable key={s} active={sound === s} onPress={() => setSound(s)} style={styles.soundTile}>
                 <MaterialCommunityIcons
                   name={SOUND_ICONS[s] || 'music'}
-                  size={14}
-                  color={sound === s ? '#fff' : pastel.textDeep}
+                  size={22}
+                  color={sound === s ? '#fff' : SEA_DEEP}
                 />
-                <Text style={[styles.soundChipText, sound === s && { color: '#fff' }]}>{s}</Text>
-              </TouchableOpacity>
+                <Text style={[styles.soundText, sound === s && styles.whiteText]} numberOfLines={1}>
+                  {s === 'White noise' ? 'Noise' : s}
+                </Text>
+              </Selectable>
             ))}
           </View>
 
-          <Text style={styles.label}>Duration: {duration} min</Text>
-          <View style={styles.durationRow}>
+          <Text style={styles.label}>Minutes</Text>
+          <View style={styles.row}>
             {DURATIONS.map((d) => (
-              <TouchableOpacity
-                key={d}
-                onPress={() => setDuration(d)}
-                style={[styles.durationChip, duration === d && styles.durationChipActive]}
-              >
-                <Text style={[styles.durationChipText, duration === d && { color: '#fff' }]}>{d}m</Text>
-              </TouchableOpacity>
+              <Selectable key={d} active={duration === d} onPress={() => setDuration(d)} style={styles.durationPill}>
+                <Text style={[styles.durationText, duration === d && styles.whiteText]}>{d}</Text>
+              </Selectable>
             ))}
           </View>
 
-          <TouchableOpacity style={styles.startBtn} onPress={() => onStart({ sound, duration })}>
-            <Text style={styles.startBtnText}>Start session</Text>
-          </TouchableOpacity>
+          <GradientButton
+            label="Start session"
+            colors={MED_GRADIENT}
+            onPress={() => onStart({ sound, duration })}
+            style={{ marginTop: theme.spacing.sm }}
+          />
         </View>
       ) : (
-        <View>
+        <View style={{ gap: 8 }}>
           {GUIDED_TYPES.map((t) => (
             <TouchableOpacity
               key={t.name}
               style={styles.guidedItem}
               onPress={() => onStartGuided({ type: t.name })}
-              activeOpacity={0.75}
+              activeOpacity={0.7}
             >
-              {/* CHANGED: each type now gets its own accent color instead of
-                  one fixed purple for all four */}
-              <SoftIcon size={42} radius={13} baseColor={t.color}>
+              <SoftIcon size={40} radius={13} baseColor={SEA}>
                 <MaterialCommunityIcons name={t.icon} size={20} color="#fff" />
               </SoftIcon>
               <View style={{ flex: 1 }}>
                 <Text style={styles.guidedName}>{t.name}</Text>
                 <Text style={styles.guidedDesc}>{t.desc}</Text>
               </View>
-              <View style={styles.guidedRight}>
-                <Text style={styles.aiLabel}>AI</Text>
-                <Text style={styles.guidedDuration}>{t.duration}</Text>
-              </View>
+              <Text style={styles.guidedDuration}>{t.duration}</Text>
             </TouchableOpacity>
           ))}
         </View>
       )}
-
-      <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-        <Text style={styles.closeBtnText}>Close</Text>
-      </TouchableOpacity>
     </SwipeDismissSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: theme.typography.fontSize.paragraph.lg,
-    fontWeight: '800', color: pastel.textDeep,
-    textAlign: 'center', marginBottom: theme.spacing.md,
+  // header strip
+  hero: {
+    borderRadius: 22, paddingVertical: 16, paddingHorizontal: 18,
+    marginBottom: theme.spacing.md, overflow: 'hidden',
+    boxShadow: '0px 6px 16px rgba(34,184,160,0.18)',
   },
+  heroKicker: { fontSize: fs.overline, fontWeight: '800', letterSpacing: 1.2, color: 'rgba(255,255,255,0.9)', marginBottom: 2 },
+  heroTitle: {
+    fontSize: fs.heading.xs, fontWeight: '800', color: '#fff', paddingVertical: 2,
+    textShadowColor: 'rgba(20,90,90,0.35)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6,
+  },
+
+  activeShadow: { borderColor: 'transparent', boxShadow: '0px 3px 8px rgba(34,184,160,0.25)' },
+  whiteText: {
+    color: '#fff',
+    textShadowColor: 'rgba(20,90,90,0.35)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3,
+  },
+
+  // tabs
   tabRow: {
-    flexDirection: 'row', backgroundColor: theme.colors.surface.two,
-    borderRadius: 20, padding: 4, marginBottom: theme.spacing.md,
+    flexDirection: 'row', gap: 6, padding: 4, borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.45)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.8)',
+    marginBottom: theme.spacing.md,
   },
-  tab:       { flex: 1, paddingVertical: 8, borderRadius: 16, alignItems: 'center' },
-  tabActive: {
-    backgroundColor: theme.colors.surface.one,
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, elevation: 1,
-  },
-  tabText:       { fontSize: 12, fontWeight: '700', color: pastel.textMuted },
-  tabTextActive: { color: pastel.textDeep },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999, overflow: 'hidden' },
+  tabText: { fontSize: fs.paragraph.sm, fontWeight: '700', color: pastel.textMuted },
+
+  // shared
   label: {
-    fontSize: 12, fontWeight: '700', color: pastel.textDeep,
-    marginBottom: theme.spacing.xs, marginTop: theme.spacing.xs,
+    fontSize: fs.caption, fontWeight: '700', color: pastel.textMuted,
+    marginBottom: theme.spacing.xs, textTransform: 'uppercase', letterSpacing: 0.8,
   },
-  soundGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: theme.spacing.sm },
-  soundChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: 16, backgroundColor: theme.colors.surface.two,
+  row: { flexDirection: 'row', gap: 8, marginBottom: theme.spacing.md },
+
+  // sounds
+  soundTile: {
+    flex: 1, alignItems: 'center', gap: 4,
+    paddingVertical: 12, borderRadius: 18, overflow: 'hidden',
+    backgroundColor: FROSTED, borderWidth: 1, borderColor: 'rgba(255,255,255,0.95)',
   },
-  soundChipActive:  { backgroundColor: theme.colors.primary },
-  soundChipText:    { fontSize: 13, fontWeight: '600', color: pastel.textDeep },
-  durationRow:      { flexDirection: 'row', gap: 8, marginBottom: theme.spacing.md },
-  durationChip: {
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 16, backgroundColor: theme.colors.surface.two,
+  soundText: { fontSize: fs.caption, fontWeight: '700', color: pastel.textDeep },
+
+  // durations
+  durationPill: {
+    flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999, overflow: 'hidden',
+    backgroundColor: FROSTED, borderWidth: 1, borderColor: 'rgba(255,255,255,0.95)',
   },
-  durationChipActive: { backgroundColor: theme.colors.primary },
-  durationChipText:   { fontSize: 12, fontWeight: '600', color: pastel.textDeep },
-  startBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 20, padding: theme.spacing.md, alignItems: 'center',
-  },
-  startBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  durationText: { fontSize: fs.paragraph.sm, fontWeight: '800', color: pastel.textDeep },
+
+  // guided
   guidedItem: {
     flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm,
-    backgroundColor: theme.colors.surface.two,
-    borderRadius: 16, padding: theme.spacing.md, marginBottom: 8,
+    padding: theme.spacing.md, borderRadius: 18,
+    backgroundColor: FROSTED, borderWidth: 1, borderColor: 'rgba(255,255,255,0.95)',
   },
-  guidedName:     { fontSize: 14, fontWeight: '700', color: pastel.textDeep },
-  guidedDesc:     { fontSize: 11, color: pastel.textMuted, marginTop: 2 },
-  guidedRight:    { alignItems: 'flex-end', gap: 4 },
-  aiLabel:        { fontSize: 10, fontWeight: '800', color: theme.colors.primary },
-  guidedDuration: { fontSize: 10, fontWeight: '600', color: pastel.textMuted },
-  closeBtn: {
-    marginTop: theme.spacing.md, backgroundColor: theme.colors.surface.two,
-    borderRadius: 16, padding: theme.spacing.md, alignItems: 'center',
-  },
-  closeBtnText: { fontWeight: '700', color: pastel.textDeep },
+  guidedName: { fontSize: fs.paragraph.md, fontWeight: '700', color: pastel.textDeep },
+  guidedDesc: { fontSize: 13, color: pastel.textMuted, marginTop: 1 },
+  guidedDuration: { fontSize: fs.caption, fontWeight: '700', color: SEA_DEEP },
 });
 
 export default MeditationModal;

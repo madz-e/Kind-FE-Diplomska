@@ -1,10 +1,13 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Modal, Animated, Dimensions, PanResponder, Pressable } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { pastel } from '@/components';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 
-const SwipeDismissSheet = ({ visible, onClose, children }) => {
+// backgroundColors (optional): gradient for the panel, e.g. ['#EEF8F6', '#DDF0EE']
+// handleColor (optional): color of the grab bar
+const SwipeDismissSheet = ({ visible, onClose, children, backgroundColors, handleColor }) => {
   const translateY = useRef(new Animated.Value(SCREEN_H)).current;
 
   useEffect(() => {
@@ -39,8 +42,17 @@ const SwipeDismissSheet = ({ visible, onClose, children }) => {
       <View style={styles.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={dismiss} />
         <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+          {backgroundColors && (
+            <LinearGradient
+              colors={backgroundColors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
+            />
+          )}
           <View {...pan.panHandlers} style={styles.grabZone}>
-            <View style={styles.handle} />
+            <View style={[styles.handle, handleColor && { backgroundColor: handleColor }]} />
           </View>
           {children}
         </Animated.View>
@@ -55,6 +67,7 @@ const styles = StyleSheet.create({
     backgroundColor: pastel.bgTop,
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     padding: 20, maxHeight: '85%',
+    overflow: 'hidden',
   },
   grabZone: { paddingTop: 8, paddingBottom: 12, alignItems: 'center' },
   handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(183,156,242,0.45)' },
