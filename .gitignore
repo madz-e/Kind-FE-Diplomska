@@ -56,3 +56,5 @@ coverage/
 
 app.config.js
 environments.js
+
+google-services.json

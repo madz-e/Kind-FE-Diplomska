@@ -28,6 +28,7 @@
     "expo": "54",
     "expo-av": "~16.0.8",
     "expo-constants": "~18.0.13",
+    "expo-dev-client": "~6.0.21",
     "expo-font": "~14.0.12",
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.12",
@@ -73,6 +74,5 @@
     "react-test-renderer": "19.0.0",
     "typescript": "~5.8.3"
   },
-  "private": true,
-  "packageManager": "yarn@3.6.4"
+  "private": true
 }

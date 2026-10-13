@@ -4,7 +4,6 @@
     "slug": "kind-mental-health-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "src/assets/images/icon.png",
     "scheme": "kind",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,22 +12,18 @@
       "bundleIdentifier": "com.kind.mentalhealth"
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "src/assets/images/adaptive-icon.png",
-        "backgroundColor": "#f5f3ff"
-      },
-      "package": "com.kind.mentalhealth"
+      "package": "com.kind.mentalhealth",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
-      "favicon": "src/assets/images/favicon.png"
+      "output": "static"
     },
     "plugins": [
       [
         "expo-splash-screen",
         {
-          "image": "src/assets/images/splash_logo.png",
+          "image": "./src/assets/images/splash_logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#f5f3ff"
@@ -37,6 +32,15 @@
       "expo-font",
       "expo-secure-store",
       "expo-notifications"
-    ]
+    ],
+    "extra": {
+      "apiUrl": "http://10.102.148.69:8080/",
+      "appEnv": "local",
+      "azureSpeechKey": "",
+      "azureSpeechRegion": "",
+      "eas": {
+        "projectId": "716d97a0-6aaf-4d04-9533-e0047aa22f46"
+      }
+    }
   }
 }
