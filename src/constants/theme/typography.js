@@ -25,6 +25,8 @@ export const typography = {
     },
   },
   fontSize: {
+    caption: 12,
+    overline: 11,
     paragraph: {
       xs: 12,
       sm: 14,
