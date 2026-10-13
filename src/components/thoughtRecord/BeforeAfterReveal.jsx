@@ -3,9 +3,8 @@ import { View, Text, StyleSheet, Pressable, TouchableOpacity, Animated, ScrollVi
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { pastel } from '@/components';
 import { theme } from '@/constants/theme';
-import { BEFORE_GRAD, NOW_GRAD } from '@/components/thoughtRecord/parts';
+import { BEFORE_GRAD, NOW_GRAD, NOW } from './cbtTheme';
 
 // Fade + rise on mount; remounts (via `key`) replay the animation per stage.
 const Reveal = ({ delay = 0, children, style }) => {
@@ -35,55 +34,95 @@ const PulseHint = ({ children }) => {
   return <Animated.View style={{ opacity: o }}>{children}</Animated.View>;
 };
 
-const Chips = ({ feelings }) => (
-  <View style={st.chipWrap}>
-    {feelings?.length ? feelings.map((f) => (
-      <View key={f.name} style={st.chip}>
-        <Text style={st.chipName}>{f.name}</Text>
-        <Text style={st.chipInt}>{f.intensity}/10</Text>
-      </View>
-    )) : <Text style={st.value}>—</Text>}
+const CardLabel = ({ icon, text }) => (
+  <View style={st.cardLabelRow}>
+    <MaterialCommunityIcons name={icon} size={15} color="rgba(255,255,255,0.9)" />
+    <Text style={st.cardLabel}>{text}</Text>
   </View>
+);
+
+const Quote = ({ text, empty }) => (
+  text?.trim()
+    ? <Text style={st.quote}>“{text.trim()}”</Text>
+    : <Text style={st.emptyText}>{empty}</Text>
+);
+
+const Chips = ({ feelings, empty }) => (
+  feelings?.length ? (
+    <View style={st.chipWrap}>
+      {feelings.map((f) => (
+        <View key={f.name} style={st.chip}>
+          <Text style={st.chipName}>{f.name}</Text>
+          <Text style={st.chipInt}>{f.intensity}/10</Text>
+        </View>
+      ))}
+    </View>
+  ) : <Text style={st.emptyText}>{empty}</Text>
 );
 
 const BeforeAfterReveal = ({ answers, onBack, onSave, saving }) => {
   const [stage, setStage] = useState('before');
+  const isNow = stage === 'now';
 
-  const back = () => (stage === 'now' ? setStage('before') : onBack());
+  // cross-fade the "now" colors in on top of the "before" colors
+  const nowLayer = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(nowLayer, { toValue: isNow ? 1 : 0, duration: 650, useNativeDriver: true }).start();
+  }, [isNow]);
+
+  const back = () => (isNow ? setStage('before') : onBack());
 
   return (
-    <LinearGradient
-      colors={stage === 'before' ? BEFORE_GRAD : NOW_GRAD}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={StyleSheet.absoluteFill}
-    >
-      {/* tap anywhere on the "before" stage to advance */}
-      <Pressable style={{ flex: 1 }} onPress={() => stage === 'before' && setStage('now')}>
-        <ScrollView contentContainerStyle={st.page} showsVerticalScrollIndicator={false}>
-          <TouchableOpacity onPress={back} style={st.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <MaterialIcons name="arrow-back" size={20} color="#fff" />
-          </TouchableOpacity>
+    <View style={StyleSheet.absoluteFill}>
+      <LinearGradient colors={BEFORE_GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: nowLayer }]} pointerEvents="none">
+        <LinearGradient colors={NOW_GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
+      {/* soft top-left sheen, like the hero cards */}
+      <LinearGradient
+        colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0)']}
+        start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 0.5 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
 
-          {stage === 'before' ? (
+      <Pressable style={{ flex: 1 }} onPress={() => !isNow && setStage('now')}>
+        <ScrollView contentContainerStyle={st.page} showsVerticalScrollIndicator={false}>
+          {/* top bar: back + two-stage dots */}
+          <View style={st.topRow}>
+            <TouchableOpacity onPress={back} style={st.backBtn} hitSlop={10}>
+              <MaterialIcons name="arrow-back" size={20} color="#fff" />
+            </TouchableOpacity>
+            <View style={st.stageDots}>
+              <View style={[st.stageDot, !isNow && st.stageDotActive]} />
+              <View style={[st.stageDot, isNow && st.stageDotActive]} />
+            </View>
+            <View style={{ width: 40 }} />
+          </View>
+
+          {!isNow ? (
             <View key="before">
-              <Reveal delay={150}>
-                <Text style={st.eyebrow}>WHERE YOU STARTED</Text>
+              <Reveal delay={100}>
+                <Text style={st.eyebrow}>YOUR SHIFT · 1 OF 2</Text>
+                <Text style={st.title}>Where you started</Text>
               </Reveal>
-              <Reveal delay={550} style={st.block}>
-                <Text style={st.label}>You felt</Text>
-                <Chips feelings={answers.feelingsBefore} />
+
+              <Reveal delay={450} style={st.card}>
+                <CardLabel icon="heart-pulse" text="You felt" />
+                <Chips feelings={answers.feelingsBefore} empty="No feelings added" />
                 {!!answers.noteBefore?.trim() && <Text style={st.note}>{answers.noteBefore.trim()}</Text>}
               </Reveal>
-              <Reveal delay={1000} style={st.block}>
-                <Text style={st.label}>And you thought</Text>
-                <Text style={st.thought}>"{answers.thought?.trim() || '—'}"</Text>
+
+              <Reveal delay={850} style={st.card}>
+                <CardLabel icon="cloud-outline" text="And you thought" />
+                <Quote text={answers.thought} empty="Nothing written" />
                 <View style={st.believePill}>
                   <MaterialCommunityIcons name="gauge" size={14} color="#fff" />
                   <Text style={st.believeText}>Believed {answers.belief}%</Text>
                 </View>
               </Reveal>
-              <Reveal delay={1550} style={st.hintWrap}>
+
+              <Reveal delay={1300} style={st.hintWrap}>
                 <PulseHint>
                   <View style={st.hintRow}>
                     <Text style={st.hint}>Tap anywhere to see where you are now</Text>
@@ -94,21 +133,30 @@ const BeforeAfterReveal = ({ answers, onBack, onSave, saving }) => {
             </View>
           ) : (
             <View key="now">
-              <Reveal delay={150}>
-                <Text style={st.eyebrow}>WHERE YOU ARE NOW</Text>
+              <Reveal delay={100}>
+                <Text style={st.eyebrow}>YOUR SHIFT · 2 OF 2</Text>
+                <Text style={st.title}>Where you are now</Text>
               </Reveal>
-              <Reveal delay={550} style={st.block}>
-                <Text style={st.label}>A more balanced thought</Text>
-                <Text style={st.thought}>"{answers.balanced?.trim() || '—'}"</Text>
+
+              <Reveal delay={450} style={st.card}>
+                <CardLabel icon="scale-balance" text="A more balanced thought" />
+                <Quote text={answers.balanced} empty="Nothing written" />
               </Reveal>
-              <Reveal delay={1000} style={st.block}>
-                <Text style={st.label}>You feel now</Text>
-                <Chips feelings={answers.feelingsNow} />
+
+              <Reveal delay={850} style={st.card}>
+                <CardLabel icon="weather-sunny" text="You feel now" />
+                <Chips feelings={answers.feelingsNow} empty="No feelings added" />
                 {!!answers.noteNow?.trim() && <Text style={st.note}>{answers.noteNow.trim()}</Text>}
               </Reveal>
-              <Reveal delay={1500} style={{ marginTop: theme.spacing.xl }}>
-                <TouchableOpacity style={[st.saveBtn, saving && { opacity: 0.6 }]} onPress={onSave} disabled={saving} activeOpacity={0.85}>
-                  <MaterialIcons name="check" size={18} color={pastel.heroPink} />
+
+              <Reveal delay={1250}>
+                <TouchableOpacity
+                  style={[st.saveBtn, saving && { opacity: 0.6 }]}
+                  onPress={onSave}
+                  disabled={saving}
+                  activeOpacity={0.85}
+                >
+                  <MaterialIcons name="check" size={18} color={NOW} />
                   <Text style={st.saveText}>{saving ? 'Saving…' : 'Save thought record'}</Text>
                 </TouchableOpacity>
               </Reveal>
@@ -116,30 +164,73 @@ const BeforeAfterReveal = ({ answers, onBack, onSave, saving }) => {
           )}
         </ScrollView>
       </Pressable>
-    </LinearGradient>
+    </View>
   );
 };
 
+const TEXT_GLOW = {
+  textShadowColor: 'rgba(74,46,122,0.35)',
+  textShadowOffset: { width: 0, height: 2 },
+  textShadowRadius: 6,
+};
+
 const st = StyleSheet.create({
-  page: { padding: theme.spacing.xl, paddingTop: theme.spacing.xxl, minHeight: '100%', justifyContent: 'center' },
-  backBtn: { position: 'absolute', top: theme.spacing.md, left: theme.spacing.md, width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-  eyebrow: { fontSize: 12, fontWeight: '800', letterSpacing: 1.5, color: 'rgba(255,255,255,0.85)', marginBottom: theme.spacing.lg },
-  block: { marginBottom: theme.spacing.xl },
-  label: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.8)', marginBottom: theme.spacing.sm, textTransform: 'uppercase', letterSpacing: 0.5 },
-  value: { fontSize: 18, color: '#fff', fontWeight: '700' },
-  thought: { fontSize: theme.typography.fontSize.heading.sm, lineHeight: 30, color: '#fff', fontWeight: '800' },
-  note: { fontSize: 14, lineHeight: 20, color: 'rgba(255,255,255,0.9)', marginTop: 8 },
+  page: { paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.md, paddingBottom: theme.spacing.xl, flexGrow: 1 },
+
+  // top bar
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.xl },
+  backBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.25)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  stageDots: { flexDirection: 'row', gap: 6 },
+  stageDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.4)' },
+  stageDotActive: { width: 22, backgroundColor: '#fff' },
+
+  // headings
+  eyebrow: { fontSize: 12, fontWeight: '800', letterSpacing: 1.4, color: 'rgba(255,255,255,0.85)', marginBottom: 6 },
+  title: { fontSize: 28, fontWeight: '800', color: '#fff', marginBottom: theme.spacing.lg, paddingVertical: 2, ...TEXT_GLOW },
+
+  // frosted cards
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.45)',
+    borderRadius: 24, padding: theme.spacing.lg, marginBottom: theme.spacing.md,
+    boxShadow: '0px 6px 18px rgba(74,46,122,0.18)',
+  },
+  cardLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: theme.spacing.sm },
+  cardLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase', color: 'rgba(255,255,255,0.9)' },
+
+  // content
+  quote: { fontSize: 20, lineHeight: 28, fontWeight: '800', color: '#fff', ...TEXT_GLOW },
+  emptyText: { fontSize: 15, fontStyle: 'italic', color: 'rgba(255,255,255,0.75)' },
+  note: { fontSize: 14, lineHeight: 20, color: 'rgba(255,255,255,0.92)', marginTop: 10 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.22)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8 },
-  chipName: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  chip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.25)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)',
+    borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8,
+  },
+  chipName: { color: '#fff', fontSize: 14, fontWeight: '800' },
   chipInt: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '700' },
-  believePill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7, marginTop: 12 },
+  believePill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 999,
+    paddingHorizontal: 12, paddingVertical: 7, marginTop: 12,
+  },
   believeText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+  // hint + save
   hintWrap: { marginTop: theme.spacing.md, alignItems: 'center' },
   hintRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   hint: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#fff', borderRadius: 18, paddingVertical: 16, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
-  saveText: { color: pastel.heroPink, fontSize: 15, fontWeight: '800' },
+  saveBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#fff', borderRadius: 999, paddingVertical: 16, marginTop: theme.spacing.md,
+    boxShadow: '0px 6px 16px rgba(74,46,122,0.25)',
+  },
+  saveText: { color: NOW, fontSize: 15, fontWeight: '800' },
 });
 
 export default BeforeAfterReveal;
