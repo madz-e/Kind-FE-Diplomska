@@ -247,6 +247,12 @@ export const cdtApi = createApi({
         params: {pushToken: pushToken}
       }),
     }),
+    sendHeart: builder.mutation({
+      query: (friendId) => ({
+        url: `/api/friends/${friendId}/send-heart`,
+        method: 'POST',
+      }),
+    }),
   }),
 });
 
@@ -279,5 +285,6 @@ export const {
   useToggleTalkFlagMutation,
   useGetMyTalkFlagQuery,
   useGetHabitsWeeksQuery,
-  useSavePushTokenMutation
+  useSavePushTokenMutation,
+  useSendHeartMutation,
 } = cdtApi;

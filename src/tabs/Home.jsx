@@ -35,6 +35,7 @@ import {
   useGetFriendsQuery,
   useGetHabitsWeeksQuery,
   useSavePushTokenMutation,
+  useSendHeartMutation,
 } from '@/api/api';
 
 import CompanionAvatar from '@/components/home/CompanionAvatar';
@@ -183,6 +184,31 @@ const Home = () => {
   const { data: friendsList = [], isLoading: loadingFriends, isError } = useGetFriendsQuery(undefined, {refetchOnMountOrArgChange: true});
   const activeFriends = friendsList.filter((friend)=>friend.talkFlagActive);
 
+  //--send-heart--
+  const [sendHeart] = useSendHeartMutation();
+  const [recentlySent, setRecentlySent] = useState({}); // friendId → true for 30s
+
+  const handleSendHeart = async (friend, displayName) => {
+    if (recentlySent[friend.id]) {
+      showSuccessToast('Already sent 🩷', `Give ${displayName} a moment`);
+      return;
+    }
+    try {
+      await sendHeart(friend.id).unwrap();
+      showSuccessToast('Sent 🩷', `${displayName} will get your <3`);
+      setRecentlySent((prev) => ({ ...prev, [friend.id]: true }));
+      setTimeout(() => {
+        setRecentlySent((prev) => {
+          const next = { ...prev };
+          delete next[friend.id];
+          return next;
+        });
+      }, 30000);
+    } catch {
+      showErrorToast("Couldn't send it, try again please");
+    }
+  };
+
 
   return (
     <View style={{ flex: 1 }}>
@@ -234,19 +260,26 @@ const Home = () => {
             </View>
             <View style={styles.talkDivider} />
             {activeFriends.length > 0 ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                          style={{ marginVertical: -10 }}
+                          contentContainerStyle={{ paddingTop: 10, paddingBottom: 14, paddingRight: 8 }}>
                 {activeFriends.map((f) => {
                   const displayName = f.name || f.username || `User #${f.id}`;
                   const initials = displayName.slice(0, 2).toUpperCase();
                   return (
-                    <View key={f.id} style={styles.avatarWrapper}>
+                    <TouchableOpacity
+                      key={f.id}
+                      style={styles.avatarWrapper}
+                      onPress={() => handleSendHeart(f, displayName)}
+                      activeOpacity={0.7}
+                    >
                       <SoftIcon size={40} radius={16} tint="pink" style={styles.talkAvatar}>
                         <Text style={styles.friendInitials}>{initials}</Text>
                       </SoftIcon>
                       <View style={styles.talkBadge}>
                         <MaterialCommunityIcons name="heart" size={15} color="#fff" />
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   );
                 })}
               </ScrollView>
