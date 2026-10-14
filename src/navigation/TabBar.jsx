@@ -9,20 +9,16 @@ import { TabBarScreens } from '../config/NavigationScreens';
 import Home from '../tabs/Home';
 import Mood from '../tabs/Mood';
 import Journal from '../tabs/Journal';
-import Resources from '../tabs/Resources';
+import Breathe from '../tabs/Breathe';
 import Profile from '../tabs/Profile';
 import { pastel } from '@/components';
 
 const Tab = createBottomTabNavigator();
 
-// CHANGED: rounder, friendlier icon per tab, filled when active / outline when idle.
 const ICONS = {
   Home: { outline: 'home-variant-outline', filled: 'home-variant' },
   Mood: { outline: 'emoticon-happy-outline', filled: 'emoticon-happy' },
   Journal: { outline: 'book-open-page-variant-outline', filled: 'book-open-page-variant' },
-  // CHANGED: was 'meditation' (a seated-person icon) when active — swapped
-  // the air-waves icon it shows the rest of the time, so selecting the tab
-  // no longer changes what icon it is.
   Resources: { outline: 'weather-windy', filled: 'weather-windy' },
   Profile: { outline: 'account-circle-outline', filled: 'account-circle' },
 };
@@ -160,7 +156,7 @@ const AppTabs = () => (
     <Tab.Screen name={TabBarScreens.Home} component={Home} />
     <Tab.Screen name={TabBarScreens.Mood} component={Mood} />
     <Tab.Screen name={TabBarScreens.Journal} component={Journal} />
-    <Tab.Screen name={TabBarScreens.Resources} component={Resources} />
+    <Tab.Screen name={TabBarScreens.Resources} component={Breathe} />
     <Tab.Screen name={TabBarScreens.Profile} component={Profile} />
   </Tab.Navigator>
 );
@@ -194,9 +190,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  // CHANGED: paddingTop reduced relative to paddingBottom so the icon+label
-  // sit a touch higher within the tab instead of feeling pushed toward the
-  // bottom edge.
   item: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -206,10 +199,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 999,
   },
-  // CHANGED: fixed width instead of content-hugging padding — every active
-  // pill is now the same size no matter which tab (short "Home" vs longer
-  // "Journal"/"Breathe"/"Profile"), and since all tabs stay equal flex:1,
-  // this fixed size never causes neighboring tabs to reflow.
   itemActive: {
     width: 74,
     paddingTop: 5,
