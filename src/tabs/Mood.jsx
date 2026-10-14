@@ -132,10 +132,10 @@ const GlossyPill = ({ label, active, onPress, style, textStyle, radius = 20 }) =
           style={[StyleSheet.absoluteFillObject, { borderRadius: radius }]}
           pointerEvents="none"
         />
-        <View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFillObject, { borderRadius: radius, borderWidth: 1.4, borderColor: 'rgba(255,255,255,0.82)' }]}
-        />
+        {/*<View*/}
+        {/*  pointerEvents="none"*/}
+        {/*  style={[StyleSheet.absoluteFillObject, { borderRadius: radius, borderWidth: 1.4, borderColor: 'rgba(255,255,255,0.82)' }]}*/}
+        {/*/>*/}
       </>
     )}
     <Text style={[textStyle, active && { color: '#fff' }]}>{label}</Text>
@@ -214,6 +214,7 @@ const Mood = () => {
   const [pendingDelete, setPendingDelete] = useState(null)
   const [searchEmotion,setSearchEmotion]=useState('')
   const [searchFactor,setSearchFactor]=useState('')
+  const [showAllEmotions, setShowAllEmotions] = useState(false);
 
 
   const year = month.getFullYear();
@@ -229,6 +230,16 @@ const Mood = () => {
   const sourceEmotions = isSearching ? allEmotions : [...emotions, ...extraSelected];
   const filteredEmotions = sourceEmotions.filter((em)=>em.name.toLowerCase().includes(searchEmotion.trim().toLowerCase()));
   const emotionsListLoading = isSearching ? allEmotionsLoading : emotionsLoading;
+  const EMOTION_PREVIEW = 7;
+// first 7 of this mood's feelings + any selected ones that aren't among them
+  const firstEmotions = emotions.slice(0, EMOTION_PREVIEW);
+  const hiddenSelected = feelings.filter((f) => !firstEmotions.some((e) => e.id === f.id));
+  const visibleEmotions = isSearching
+    ? filteredEmotions
+    : showAllEmotions
+      ? sourceEmotions
+      : [...firstEmotions, ...hiddenSelected];
+  const canExpand = !isSearching && emotions.length > EMOTION_PREVIEW;
 
   const { data: moodFactors = [], isLoading: factorsLoading } = useGetMoodFactorsQuery();
   const filteredFactors = moodFactors.filter((f) =>
@@ -250,6 +261,8 @@ const Mood = () => {
   useEffect(() => {
     if (userId) refetchEntries();
   }, [month, userId]);
+
+  useEffect(() => { setShowAllEmotions(false); }, [mood]);
 
   const reset = () => { setStep(1); setMood(null); setFeelings([]); setFactors([]); setNote(''); setDone(false); };
 
@@ -300,8 +313,7 @@ const Mood = () => {
   };
 
   const daysIn = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-  // CHANGED: getDay() returns Sunday=0..Saturday=6; remapped so the week
-  // (and the leading blank cells) starts on Monday instead.
+
   const firstDow = (new Date(month.getFullYear(), month.getMonth(), 1).getDay() + 6) % 7;
   const monthName = month.toLocaleString('default', { month: 'long', year: 'numeric' });
 
@@ -425,7 +437,7 @@ const Mood = () => {
                       <ActivityIndicator color={pastel.purpleDeep} />
                     ) : (
                       <View style={styles.chipsWrap}>
-                        {filteredEmotions.map((f) => {
+                        {visibleEmotions.map((f) => {
                           const isActive = feelings.some((x) => x.id === f.id);
                           return (
                             <GlossyPill
@@ -439,6 +451,13 @@ const Mood = () => {
                           );
                         })}
                       </View>
+                    )}
+                    {!emotionsListLoading && canExpand && (
+                      <TouchableOpacity onPress={() => setShowAllEmotions((v) => !v)} hitSlop={8} activeOpacity={0.6}>
+                        <Text style={styles.seeMore}>
+                          {showAllEmotions ? 'See less' : `See more feelings...`}
+                        </Text>
+                      </TouchableOpacity>
                     )}
                   </View>
                 )}
@@ -743,6 +762,13 @@ const styles = StyleSheet.create({
   modalBtnCancelText: { fontWeight: '700', color: pastel.textDeep, fontSize: 14 },
   modalBtnDelete: { backgroundColor: pastel.rose },
   modalBtnDeleteText: { fontWeight: '700', color: '#fff', fontSize: 14 },
+  seeMore: {
+    fontSize: theme.typography.fontSize.paragraph.sm,
+    fontWeight: '500',
+    color: pastel.purpleDeep,
+    paddingTop: theme.spacing.sm,
+    paddingLeft: 10
+  },
 });
 
 export default Mood;

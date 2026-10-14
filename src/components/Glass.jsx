@@ -303,7 +303,7 @@ export const GradientButton = ({
         <View
           style={[
             StyleSheet.absoluteFillObject,
-            { borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.75)' },
+            { borderRadius: 999, borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.75)' },
           ]}
           pointerEvents="none"
         />
