@@ -186,24 +186,11 @@ const Home = () => {
 
   //--send-heart--
   const [sendHeart] = useSendHeartMutation();
-  const [recentlySent, setRecentlySent] = useState({}); // friendId → true for 30s
 
   const handleSendHeart = async (friend, displayName) => {
-    if (recentlySent[friend.id]) {
-      showSuccessToast('Already sent 🩷', `Give ${displayName} a moment`);
-      return;
-    }
     try {
       await sendHeart(friend.id).unwrap();
-      showSuccessToast('Sent 🩷', `${displayName} will get your <3`);
-      setRecentlySent((prev) => ({ ...prev, [friend.id]: true }));
-      setTimeout(() => {
-        setRecentlySent((prev) => {
-          const next = { ...prev };
-          delete next[friend.id];
-          return next;
-        });
-      }, 30000);
+      showSuccessToast('Sent 🩷', `${displayName} will get your love`);
     } catch {
       showErrorToast("Couldn't send it, try again please");
     }
