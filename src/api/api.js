@@ -205,8 +205,6 @@ export const cdtApi = createApi({
     }),
 
     // --- Breathing Sessions ---
-    // NOTE: this backend route does not exist yet — see api README / ask
-    // backend to add it. Frontend is wired against the shape documented there.
     getBreathingSessions: builder.query({
       query: (userId) => `api/breathing-sessions/user/${userId}`,
       providesTags: ['BreathingSession'],

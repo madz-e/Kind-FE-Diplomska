@@ -97,7 +97,6 @@ const Profile = () => {
   // ── Stats (real data) ──────────────────────────────────────────────────────
   const { data: moodEntries = [] } = useGetMoodEntriesQuery(userId, { skip: !userId });
   const { data: journalEntries = [] } = useGetJournalEntriesQuery(userId, { skip: !userId });
-  // NOTE: no backend route for this yet — see api.js `getBreathingSessions`.
   const { data: breathingSessions = [] } = useGetBreathingSessionsQuery(userId, { skip: !userId });
 
   const moodDates = moodEntries.map((e) => e.date);

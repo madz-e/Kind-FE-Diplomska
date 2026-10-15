@@ -597,16 +597,6 @@ const Breathe = () => {
               countdown={countdown}
             />
 
-            {/*<View style={styles.stepRow}>*/}
-            {/*  {exercise.steps.map((s, i) => {*/}
-            {/*    const active = running && phaseKey === stepPhaseKey(i);*/}
-            {/*    return (*/}
-            {/*      <View key={i} style={[styles.stepPill, active && styles.stepPillActive]}>*/}
-            {/*        <Text style={[styles.stepLabel, active && { color: exercise.petalA }]}>{s.label}</Text>*/}
-            {/*      </View>*/}
-            {/*    );*/}
-            {/*  })}*/}
-            {/*</View>*/}
             <PhaseBars
               steps={exercise.steps}
               activeIndex={activeIndex}
