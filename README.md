@@ -7,6 +7,50 @@ This repository is the **frontend**. The backend (Spring Boot + PostgreSQL) live
 Git repo Frontend: https://github.com/madz-e/Kind-FE-Diplomska
 Git repo Backend: https://github.com/madz-e/Kind-BE-Diplomska
 ---
+## Screenshots
+
+### Home
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/Home.jpeg" width="220"/><br/>Home</td>
+    <td align="center"><img src="docs/screenshots/Habits.jpeg" width="220"/><br/>Habits</td>
+    <td align="center"><img src="docs/screenshots/Habit%20Week%20Tracker.jpeg" width="220"/><br/>Habit week tracker</td>
+  </tr>
+</table>
+
+### Mood
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/Mood%20Tracking.jpeg" width="220"/><br/>Mood tracking</td>
+    <td align="center"><img src="docs/screenshots/Mood%20Calendar.jpeg" width="220"/><br/>Mood calendar</td>
+    <td align="center"><img src="docs/screenshots/Mood%20Insight.jpeg" width="220"/><br/>AI mood insight</td>
+  </tr>
+</table>
+
+### Journal — CBT Thought Record
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/Before.jpeg" width="220"/><br/>Before</td>
+    <td align="center"><img src="docs/screenshots/After.jpeg" width="220"/><br/>After</td>
+  </tr>
+</table>
+
+### Breathe & Meditation
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/Breathe%20Animation.gif" width="220"/><br/>Breathing exercise</td>
+    <td align="center"><img src="docs/screenshots/Meditation.jpeg" width="220"/><br/>Meditation picker</td>
+    <td align="center"><img src="docs/screenshots/Meditation%20Session.jpeg" width="220"/><br/>Meditation session</td>
+  </tr>
+</table>
+
+### Profile
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/Profile.jpeg" width="220"/><br/>Profile</td>
+    <td align="center"><img src="docs/screenshots/Friends.jpeg" width="220"/><br/>Friends</td>
+  </tr>
+</table>
 
 ## Architecture
 
