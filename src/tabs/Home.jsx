@@ -9,7 +9,8 @@ import {
   Alert,
   Switch,
   Dimensions,
-  Animated
+  Animated,
+  AppState
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -47,6 +48,7 @@ import MeditationSession from '@/components/home/MeditationSession';
 import GuidedMeditationSession from '@/components/home/GuidedMeditationSession';
 import { registerForPushNotifications } from '@/utils/pushToken';
 import { habitIconName } from '@/components/home/HabitRow';
+import * as Notifications from 'expo-notifications';
 
 const Home = () => {
   const insets   = useSafeAreaInsets();
@@ -181,8 +183,31 @@ const Home = () => {
   }, []);
 
   //--friends list
-  const { data: friendsList = [], isLoading: loadingFriends, isError } = useGetFriendsQuery(undefined, {refetchOnMountOrArgChange: true});
-  const activeFriends = friendsList.filter((friend)=>friend.talkFlagActive);
+  const {
+    data: friendsList = [],
+    isLoading: loadingFriends,
+    isError,
+    refetch: refetchFriends,
+  } = useGetFriendsQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+    pollingInterval: 30000,});
+  const activeFriends = friendsList.filter((friend)=>friend.talkFlagActive)
+
+  // a notification arrived while the app is open (e.g. "X wants to talk") → refresh now
+  useEffect(() => {
+    const sub = Notifications.addNotificationReceivedListener(() => {
+      refetchFriends();
+    });
+    return () => sub.remove();
+  }, [refetchFriends]);
+
+// the app came back to the foreground → refresh
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refetchFriends();
+    });
+    return () => sub.remove();
+  }, [refetchFriends]);
 
   //--send-heart--
   const [sendHeart] = useSendHeartMutation();
